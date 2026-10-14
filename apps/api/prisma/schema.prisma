@@ -1,0 +1,459 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  SALE
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum CustomerStatus {
+  NEW
+  CONTACTED
+  CONSULTING
+  WAITING_REPLY
+  FOLLOW_UP
+  CONVERTED
+  DROPPED
+}
+
+enum CustomerPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ActivityType {
+  CALL
+  MESSAGE
+  MEETING
+  NOTE
+  STATUS_CHANGE
+  HANDOVER
+}
+
+enum IntegrationCapability {
+  READ_CHATS
+  SYNC_MESSAGES_FILES
+  BULK_SEND
+}
+
+enum CapabilityVerificationStatus {
+  PENDING
+  IN_REVIEW
+  VERIFIED
+  REJECTED
+  NEEDS_VERIFICATION
+}
+
+enum ConnectionStatus {
+  NOT_CONFIGURED
+  NOT_CONNECTED
+  CONNECTING
+  ACTIVE
+  ERROR
+  DISABLED
+}
+
+enum ProviderType {
+  DEMO
+  ZALO_PERSONAL
+  ZALO_OA
+}
+
+enum DataSource {
+  MANUAL
+  DEMO
+  CONNECTOR
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageContentType {
+  TEXT
+  IMAGE
+  FILE
+  SYSTEM
+}
+
+enum CampaignStatus {
+  DRAFT
+  PREVIEWED
+  CONFIRMED
+  SENDING
+  COMPLETED
+  CANCELLED
+  FAILED
+}
+
+enum CampaignRecipientStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+  SKIPPED
+}
+
+enum AuditAction {
+  LOGIN
+  LOGOUT
+  CREATE_USER
+  UPDATE_USER
+  DISABLE_USER
+  CREATE_CUSTOMER
+  UPDATE_CUSTOMER
+  ASSIGN_CUSTOMER
+  HANDOVER_CUSTOMER
+  EXPORT_CUSTOMERS
+  UPDATE_VERIFICATION
+  UPDATE_CONNECTION
+  CREATE_CAMPAIGN
+  PREVIEW_CAMPAIGN
+  CONFIRM_CAMPAIGN
+  CANCEL_CAMPAIGN
+  DELETE_ATTACHMENT
+  INVITE_SALE_CREATED
+  INVITE_SALE_SCANNED
+  INVITE_SALE_COMPLETED
+  INVITE_SALE_CANCELLED
+}
+
+enum InviteStatus {
+  PENDING
+  SCANNED
+  COMPLETED
+  CANCELLED
+  EXPIRED
+}
+
+model User {
+  id              String      @id @default(cuid())
+  code            String      @unique
+  name            String
+  email           String      @unique
+  phone           String?
+  password        String
+  role            UserRole    @default(SALE)
+  status          UserStatus  @default(ACTIVE)
+  teamId          String?
+  team            SalesTeam?  @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  avatarUrl       String?
+  zaloAccountName String?
+  zaloPhone       String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  assignedCustomers Customer[]
+  assignmentsFrom   CustomerAssignment[] @relation("FromUser")
+  assignmentsTo     CustomerAssignment[] @relation("ToUser")
+  assignmentsDone   CustomerAssignment[] @relation("ChangedByUser")
+  activities        CustomerActivity[]
+  tasks             Task[]               @relation("TaskAssignedTo")
+  createdTasks      Task[]               @relation("TaskCreatedBy")
+  verifications     IntegrationCapabilityVerification[] @relation("SalesUserVerifications")
+  verifiedActions   IntegrationCapabilityVerification[] @relation("VerifierUser")
+  connections       IntegrationConnection[]
+  campaigns         Campaign[]
+  auditLogs         AuditLog[]
+  notifications     Notification[]
+  conversations     Conversation[]
+  createdInvites    SaleInvite[]         @relation("CreatedInvites")
+  usedInvites       SaleInvite[]         @relation("UsedInvites")
+}
+
+model SalesTeam {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?
+  leaderId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members     User[]
+  invites     SaleInvite[]
+}
+
+model SaleInvite {
+  id            String       @id @default(cuid())
+  token         String       @unique
+  status        InviteStatus @default(PENDING)
+  teamId        String?
+  team          SalesTeam?   @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  createdById   String
+  createdBy     User         @relation("CreatedInvites", fields: [createdById], references: [id], onDelete: Cascade)
+  usedByUserId  String?
+  usedByUser    User?        @relation("UsedInvites", fields: [usedByUserId], references: [id], onDelete: SetNull)
+  scannedAt     DateTime?
+  usedAt        DateTime?
+  expiresAt     DateTime
+  metadata      String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Customer {
+  id              String           @id @default(cuid())
+  code            String           @unique
+  fullName        String
+  phone           String?
+  email           String?
+  source          String
+  status          CustomerStatus   @default(NEW)
+  priority        CustomerPriority @default(MEDIUM)
+  tags            String           @default("[]")
+  notes           String?
+  assignedToId    String?
+  assignedTo      User?            @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  lastContactedAt DateTime?
+  nextFollowUpAt  DateTime?
+  deletedAt       DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  assignments     CustomerAssignment[]
+  activities      CustomerActivity[]
+  tasks           Task[]
+  conversations   Conversation[]
+  attachments     Attachment[]
+  recipients      CampaignRecipient[]
+
+  @@index([status])
+  @@index([assignedToId])
+  @@index([phone])
+}
+
+model CustomerAssignment {
+  id              String   @id @default(cuid())
+  customerId      String
+  customer        Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  fromUserId      String?
+  fromUser        User?    @relation("FromUser", fields: [fromUserId], references: [id], onDelete: SetNull)
+  toUserId        String
+  toUser          User     @relation("ToUser", fields: [toUserId], references: [id], onDelete: Cascade)
+  changedByUserId String
+  changedByUser   User     @relation("ChangedByUser", fields: [changedByUserId], references: [id], onDelete: Cascade)
+  reason          String
+  createdAt       DateTime @default(now())
+
+  @@index([customerId])
+  @@index([toUserId])
+}
+
+model CustomerActivity {
+  id          String       @id @default(cuid())
+  customerId  String
+  customer    Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        ActivityType
+  title       String
+  description String?
+  createdAt   DateTime     @default(now())
+
+  @@index([customerId])
+  @@index([userId])
+}
+
+model Task {
+  id           String     @id @default(cuid())
+  title        String
+  description  String?
+  dueDate      DateTime?
+  status       TaskStatus @default(PENDING)
+  customerId   String?
+  customer     Customer?  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  assignedToId String?
+  assignedTo   User?      @relation("TaskAssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdById  String
+  createdBy    User       @relation("TaskCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([assignedToId])
+  @@index([customerId])
+}
+
+model IntegrationConnection {
+  id               String           @id @default(cuid())
+  userId           String
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider         ProviderType     @default(ZALO_PERSONAL)
+  accountLabel     String
+  connectionStatus ConnectionStatus @default(NOT_CONFIGURED)
+  lastCheckedAt    DateTime?
+  lastErrorCode    String?
+  isDemo           Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  conversations    Conversation[]
+
+  @@index([userId])
+}
+
+model IntegrationCapabilityVerification {
+  id                 String                       @id @default(cuid())
+  userId             String
+  user               User                         @relation("SalesUserVerifications", fields: [userId], references: [id], onDelete: Cascade)
+  capability         IntegrationCapability
+  status             CapabilityVerificationStatus @default(PENDING)
+  method             String
+  evidenceUrl        String?
+  evidenceReference  String?
+  scopeNotes         String?
+  verificationNotes  String?
+  verifiedByUserId   String?
+  verifiedByUser     User?                        @relation("VerifierUser", fields: [verifiedByUserId], references: [id], onDelete: SetNull)
+  verifiedAt         DateTime?
+  testResult         String?
+  createdAt          DateTime                     @default(now())
+  updatedAt          DateTime                     @updatedAt
+
+  @@unique([userId, capability])
+  @@index([userId])
+}
+
+model Conversation {
+  id                     String                 @id @default(cuid())
+  customerId             String
+  customer               Customer               @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  salesUserId            String
+  salesUser              User                   @relation(fields: [salesUserId], references: [id], onDelete: Cascade)
+  integrationConnectionId String?
+  connection             IntegrationConnection? @relation(fields: [integrationConnectionId], references: [id], onDelete: SetNull)
+  channelType            String                 @default("ZALO")
+  externalConversationId String?
+  title                  String
+  isDemo                 Boolean                @default(false)
+  unreadCount            Int                    @default(0)
+  lastMessageAt          DateTime?
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+
+  messages               Message[]
+
+  @@index([customerId])
+  @@index([salesUserId])
+}
+
+model Message {
+  id                  String             @id @default(cuid())
+  conversationId      String
+  conversation        Conversation       @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  externalMessageId   String?
+  direction           MessageDirection
+  contentType         MessageContentType @default(TEXT)
+  textContent         String?
+  sentAt              DateTime           @default(now())
+  sourceType          DataSource         @default(DEMO)
+  isDemo              Boolean            @default(false)
+  deliveryStatus      String?
+
+  attachments         Attachment[]
+
+  @@index([conversationId])
+}
+
+model Attachment {
+  id           String      @id @default(cuid())
+  messageId    String?
+  message      Message?    @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  customerId   String?
+  customer     Customer?   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  fileName     String
+  fileType     String
+  mimeType     String
+  fileSize     Int
+  filePath     String
+  sourceType   DataSource  @default(DEMO)
+  uploadedById String?
+  createdAt    DateTime    @default(now())
+
+  @@index([customerId])
+  @@index([messageId])
+}
+
+model Campaign {
+  id              String         @id @default(cuid())
+  name            String
+  content         String
+  status          CampaignStatus @default(DRAFT)
+  createdById     String
+  createdBy       User           @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  targetFilter    String?
+  totalRecipients Int            @default(0)
+  successCount    Int            @default(0)
+  failedCount     Int            @default(0)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  recipients      CampaignRecipient[]
+
+  @@index([createdById])
+}
+
+model CampaignRecipient {
+  id           String                  @id @default(cuid())
+  campaignId   String
+  campaign     Campaign                @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  customerId   String
+  customer     Customer                @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  status       CampaignRecipientStatus @default(PENDING)
+  sentAt       DateTime?
+  errorMessage String?
+  createdAt    DateTime                @default(now())
+
+  @@index([campaignId])
+  @@index([customerId])
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  userId     String?
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     AuditAction
+  resource   String
+  resourceId String?
+  details    String?
+  ipAddress  String?
+  createdAt  DateTime    @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
