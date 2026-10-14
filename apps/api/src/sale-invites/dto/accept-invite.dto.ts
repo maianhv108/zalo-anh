@@ -7,9 +7,10 @@ export class AcceptInviteDto {
   @IsNotEmpty({ message: 'Vui lòng nhập họ và tên' })
   name: string;
 
-  @ApiProperty({ example: 'mai.nguyen@example.com', description: 'Email nhân viên' })
+  @ApiProperty({ example: 'mai.nguyen@example.com', required: false, description: 'Email nhân viên (tùy chọn)' })
+  @IsOptional()
   @IsEmail({}, { message: 'Email không hợp lệ' })
-  email: string;
+  email?: string;
 
   @ApiProperty({ example: '0987654321', description: 'Số điện thoại cá nhân / Zalo' })
   @IsString()
@@ -17,10 +18,10 @@ export class AcceptInviteDto {
   @Matches(/^[0-9]{9,11}$/, { message: 'Số điện thoại phải từ 9 đến 11 chữ số' })
   phone: string;
 
-  @ApiProperty({ example: 'Sale@123456', description: 'Mật khẩu tạo mới để đăng nhập CRM sau này' })
+  @ApiProperty({ example: 'Sale@123456', required: false, description: 'Mật khẩu (tùy chọn, hệ thống tự cấp nếu để trống)' })
+  @IsOptional()
   @IsString()
-  @MinLength(6, { message: 'Mật khẩu phải có tối thiểu 6 ký tự' })
-  password: string;
+  password?: string;
 
   @ApiProperty({ example: 'Mai Nguyễn Zalo', required: false, description: 'Tên hiển thị Zalo (tùy chọn)' })
   @IsOptional()

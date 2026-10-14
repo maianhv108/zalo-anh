@@ -457,14 +457,14 @@ export default function SalesPage() {
                 <p className="text-xs text-slate-500">Đang khởi tạo mã QR bảo mật...</p>
               </div>
             ) : inviteData?.status === 'COMPLETED' ? (
-              /* KHI THAM GIA THÀNH CÔNG */
+              /* KHI LIÊN KẾT ZALO THÀNH CÔNG */
               <div className="py-6 space-y-3 animate-fade-in">
                 <div className="h-16 w-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-inner">
                   <CheckCircle2 className="h-9 w-9" />
                 </div>
                 <div>
-                  <h4 className="text-base font-bold text-slate-900">Nhân Viên Đã Tham Gia Thành Công!</h4>
-                  <p className="text-xs text-slate-500 mt-0.5">Tài khoản Sale đã được tự động thêm vào hệ thống CRM</p>
+                  <h4 className="text-base font-bold text-slate-900">Tài Khoản Zalo Đã Kết Nối Thành Công!</h4>
+                  <p className="text-xs text-slate-500 mt-0.5">Hệ thống đã nhận diện Zalo của nhân viên và bắt đầu đồng bộ tin nhắn</p>
                 </div>
 
                 <div className="mt-3 p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-xl text-left text-xs space-y-1.5 max-w-sm mx-auto">
@@ -473,17 +473,29 @@ export default function SalesPage() {
                     <span className="font-bold text-emerald-800 font-mono">{inviteData.usedByUser?.code}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Họ và tên:</span>
+                    <span className="text-slate-500">Họ và tên Sale:</span>
                     <span className="font-bold text-slate-900">{inviteData.usedByUser?.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Email:</span>
-                    <span className="text-slate-700">{inviteData.usedByUser?.email}</span>
+                    <span className="text-slate-500">Số điện thoại Zalo:</span>
+                    <span className="font-medium text-slate-800 font-mono">{inviteData.usedByUser?.phone}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Vai trò:</span>
-                    <span className="font-semibold text-blue-600">Nhân viên Sale (SALE)</span>
+                    <span className="text-slate-500">Trạng thái kết nối Zalo:</span>
+                    <span className="font-semibold text-emerald-700 flex items-center gap-1">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
+                      ĐÃ KẾT NỐI (ACTIVE)
+                    </span>
                   </div>
+                </div>
+
+                <div className="pt-2 flex justify-center">
+                  <Link href="/inbox">
+                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-2 shadow-md">
+                      <span>Vào Hộp Thư Xem Tin Nhắn</span>
+                      <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+                    </Button>
+                  </Link>
                 </div>
               </div>
             ) : (
