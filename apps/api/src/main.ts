@@ -8,9 +8,21 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
-  // Cấu hình CORS
+  // Cấu hình CORS (Hỗ trợ cả localhost và địa chỉ IP Wi-Fi/LAN của máy tính)
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    origin: (origin, callback) => {
+      // Cho phép không có origin (mobile apps/curls), localhost, và các IP mạng nội bộ
+      if (
+        !origin ||
+        /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/.test(
+          origin,
+        )
+      ) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Trong môi trường dev, cho phép để điện thoại quét thuận tiện
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],

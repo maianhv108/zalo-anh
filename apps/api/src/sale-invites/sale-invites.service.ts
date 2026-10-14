@@ -21,6 +21,7 @@ import {
 import * as QRCode from 'qrcode';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
+import * as os from 'os';
 
 @Injectable()
 export class SaleInvitesService {
@@ -28,6 +29,26 @@ export class SaleInvitesService {
     private prisma: PrismaService,
     private jwtService: JwtService,
   ) {}
+
+  /**
+   * Lấy địa chỉ IPv4 Wi-Fi / LAN của máy tính
+   * Giúp điện thoại di động quét mã QR có thể truy cập được qua Wi-Fi thay vì bị lỗi 'localhost'
+   */
+  public getLocalIpAddress(): string {
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+      for (const iface of interfaces[name] || []) {
+        if (
+          iface.family === 'IPv4' &&
+          !iface.internal &&
+          !iface.address.startsWith('169.254.')
+        ) {
+          return iface.address;
+        }
+      }
+    }
+    return '127.0.0.1';
+  }
 
   /**
    * Tạo mã mời QR mới cho nhân viên Sale (Dành cho Admin/Manager)
@@ -52,8 +73,13 @@ export class SaleInvitesService {
     const expiresAt = new Date(Date.now() + minutes * 60 * 1000);
 
     // 4. Xác định URL lời mời (Trỏ về cổng Frontend Web 3000)
-    const defaultHost = hostHeader ? hostHeader.replace(':4000', ':3000') : 'localhost:3000';
-    const origin = process.env.FRONTEND_URL || `http://${defaultHost}`;
+    // Tự động thay thế localhost bằng IP mạng nội bộ của máy chủ để điện thoại quét mở được
+    const localIp = this.getLocalIpAddress();
+    let host = hostHeader ? hostHeader.replace(':4000', ':3000') : `${localIp}:3000`;
+    if (host.includes('localhost') || host.includes('127.0.0.1')) {
+      host = host.replace('localhost', localIp).replace('127.0.0.1', localIp);
+    }
+    const origin = process.env.FRONTEND_URL || `http://${host}`;
     const inviteUrl = `${origin}/invite/${token}`;
 
     // 5. Sinh mã QR Base64 dạng PNG chất lượng cao
@@ -109,6 +135,7 @@ export class SaleInvitesService {
       createdBy: invite.createdBy.name,
       inviteUrl,
       qrCodeDataUrl,
+      localIp,
       expiresAt: invite.expiresAt,
       expiresInSeconds: Math.floor((expiresAt.getTime() - Date.now()) / 1000),
     };

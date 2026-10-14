@@ -23,6 +23,7 @@ import {
   Clock,
   ArrowRight,
   Building2,
+  Wifi,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -559,6 +560,21 @@ export default function SalesPage() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Hướng dẫn kết nối Wi-Fi cho điện thoại */}
+          <div className="p-3 bg-amber-50/90 border border-amber-200 rounded-xl text-left text-xs text-amber-900 flex items-start gap-2.5">
+            <Wifi className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-semibold text-amber-950">
+                Để điện thoại quét Zalo vào được ngay:
+              </p>
+              <p className="text-[11px] text-amber-800 leading-relaxed">
+                1. Điện thoại cần <strong>bật kết nối chung mạng Wi-Fi</strong> với máy tính này (máy tính đang có IP Wi-Fi là <code className="bg-amber-100 font-mono px-1 py-0.5 rounded font-bold">{inviteData?.localIp || '192.168.1.37'}</code>).
+                <br />
+                2. Chị cũng có thể bấm <strong>"Sao chép link"</strong> ở bên dưới để gửi trực tiếp qua tin nhắn Zalo cho nhân viên bấm vào luôn nhé!
+              </p>
+            </div>
           </div>
 
           {/* Công cụ hỗ trợ: Sao chép link hoặc Mở thử nghiệm */}

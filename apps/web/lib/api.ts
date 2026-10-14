@@ -1,4 +1,8 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+// Trong trình duyệt (cả PC và điện thoại), dùng đường dẫn tương đối '/api/v1' 
+// để Next.js tự động chuyển tiếp (proxy) sang cổng 4000 của backend, tránh lỗi 'localhost' và CORS trên điện thoại
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  (typeof window !== 'undefined' ? '/api/v1' : 'http://localhost:4000/api/v1');
 
 export class ApiError extends Error {
   statusCode: number;
