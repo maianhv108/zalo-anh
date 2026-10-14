@@ -5,7 +5,7 @@ color 0A
 
 echo ===================================================================
 echo    HE THONG TU DONG DANG KET NOI VA DAY CODE LEN GITHUB
-echo    Repository: https://github.com/loctran-art/zalo-anh.git
+echo    Repository: https://github.com/maianhv108/zalo-anh.git
 echo ===================================================================
 echo.
 echo Dang thuc hien lenh day code len nhanh main...
