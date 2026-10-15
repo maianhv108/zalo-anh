@@ -15,6 +15,7 @@ import {
   Settings,
   ShieldCheck,
   ChevronRight,
+  Share2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -23,6 +24,7 @@ const navigationItems = [
   { name: 'Nhân viên Sale', href: '/sales', icon: Users },
   { name: 'Khách hàng', href: '/customers', icon: UserCheck },
   { name: 'Hội thoại', href: '/inbox', icon: MessageSquare },
+  { name: 'Đăng bài đồng loạt', href: '/posts', icon: Share2 },
   { name: 'Kho lưu trữ', href: '/archive', icon: FolderArchive },
   { name: 'Chiến dịch gửi tin', href: '/campaigns', icon: Send },
   { name: 'Báo cáo', href: '/reports', icon: BarChart3 },

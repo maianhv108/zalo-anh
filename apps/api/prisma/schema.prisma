@@ -138,6 +138,9 @@ enum AuditAction {
   INVITE_SALE_SCANNED
   INVITE_SALE_COMPLETED
   INVITE_SALE_CANCELLED
+  CREATE_ZALO_POST
+  PUBLISH_ZALO_POST
+  DELETE_ZALO_POST
 }
 
 enum InviteStatus {
@@ -181,6 +184,8 @@ model User {
   conversations     Conversation[]
   createdInvites    SaleInvite[]         @relation("CreatedInvites")
   usedInvites       SaleInvite[]         @relation("UsedInvites")
+  createdBroadcastPosts  ZaloBroadcastPost[]  @relation("CreatedBroadcastPosts")
+  targetedBroadcastPosts ZaloPostTarget[]     @relation("TargetedBroadcastPosts")
 }
 
 model SalesTeam {
@@ -457,3 +462,62 @@ model Notification {
 
   @@index([userId])
 }
+
+enum ZaloPostStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHING
+  PUBLISHED
+  PARTIALLY_FAILED
+  FAILED
+}
+
+enum ZaloPostTargetStatus {
+  PENDING
+  PUBLISHING
+  SUCCESS
+  FAILED
+}
+
+model ZaloBroadcastPost {
+  id           String             @id @default(cuid())
+  title        String
+  content      String
+  imageUrl     String?
+  linkUrl      String?
+  status       ZaloPostStatus     @default(PUBLISHED)
+  scheduledAt  DateTime?
+  publishedAt  DateTime?
+  createdById  String
+  createdBy    User               @relation("CreatedBroadcastPosts", fields: [createdById], references: [id], onDelete: Cascade)
+  isDemo       Boolean            @default(true)
+  totalTarget  Int                @default(0)
+  successCount Int                @default(0)
+  failedCount  Int                @default(0)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  targets      ZaloPostTarget[]
+
+  @@index([createdById])
+  @@index([status])
+}
+
+model ZaloPostTarget {
+  id           String               @id @default(cuid())
+  postId       String
+  post         ZaloBroadcastPost    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User                 @relation("TargetedBroadcastPosts", fields: [userId], references: [id], onDelete: Cascade)
+  status       ZaloPostTargetStatus @default(SUCCESS)
+  zaloPostUrl  String?
+  likesCount   Int                  @default(0)
+  commentsCount Int                 @default(0)
+  errorMessage String?
+  publishedAt  DateTime?
+  createdAt    DateTime             @default(now())
+
+  @@index([postId])
+  @@index([userId])
+}
+

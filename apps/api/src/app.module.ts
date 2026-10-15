@@ -18,6 +18,7 @@ import { ReportsModule } from './reports/reports.module';
 import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { SaleInvitesModule } from './sale-invites/sale-invites.module';
+import { ZaloPostsModule } from './zalo-posts/zalo-posts.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { SaleInvitesModule } from './sale-invites/sale-invites.module';
     AuditLogsModule,
     NotificationsModule,
     SaleInvitesModule,
+    ZaloPostsModule,
   ],
 })
 export class AppModule {}
