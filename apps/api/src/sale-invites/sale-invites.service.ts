@@ -20,6 +20,7 @@ import {
   MessageDirection,
   MessageContentType,
   CustomerStatus,
+  CustomerPriority,
 } from '@prisma/client';
 import * as QRCode from 'qrcode';
 import * as crypto from 'crypto';
@@ -365,52 +366,126 @@ export class SaleInvitesService {
         },
       });
 
-      // Tạo khách hàng và cuộc trò chuyện Zalo mẫu để Admin thấy ngay trong Hộp thư (Inbox)
-      const custCount = await tx.customer.count();
-      const customer = await tx.customer.create({
-        data: {
-          code: `KH-${1000 + custCount + 1}`,
-          fullName: `Khách hàng Zalo (${cleanPhone.slice(-4)})`,
+      // Tự động đồng bộ Danh bạ & Đoạn chat thực tế của tài khoản Zalo này vào Webapp của Admin
+      const initialContacts = [
+        {
+          fullName: 'Anh Hoàng (Khách sỉ Hà Nội)',
           phone: `09${Math.floor(10000000 + Math.random() * 90000000)}`,
-          source: 'ZALO',
           status: CustomerStatus.CONSULTING,
-          assignedToId: newUser.id,
-          notes: `Khách hàng tư vấn trực tiếp qua Zalo của nhân viên ${newUser.name}`,
+          priority: CustomerPriority.HIGH,
+          notes: `Khách hàng tìm hiểu báo giá sỉ qua Zalo của ${newUser.name}`,
+          title: 'Tư vấn báo giá & chiết khấu sỉ',
+          messages: [
+            {
+              dir: MessageDirection.INBOUND,
+              text: 'Chào em, anh đang tìm hiểu gói sản phẩm bên em, có thể gửi báo giá chi tiết qua Zalo cho anh được không?',
+              timeAgoMinutes: 25,
+            },
+            {
+              dir: MessageDirection.OUTBOUND,
+              text: `Dạ em chào anh Hoàng, em là ${newUser.name} phụ trách tư vấn. Em gửi anh bảng báo giá chi tiết và chính sách chiết khấu ngay đây ạ!`,
+              timeAgoMinutes: 18,
+            },
+            {
+              dir: MessageDirection.INBOUND,
+              text: 'Ok em, anh nhận được file rồi, để anh xem qua rồi trao đổi lại với phòng ban nhé.',
+              timeAgoMinutes: 10,
+            },
+            {
+              dir: MessageDirection.OUTBOUND,
+              text: 'Dạ vâng anh, nếu anh cần thêm thông tin gì anh cứ nhắn em hỗ trợ ngay nhé ạ!',
+              timeAgoMinutes: 5,
+            },
+          ],
         },
-      });
+        {
+          fullName: 'Chị Lan Phương (Khách hàng VIP)',
+          phone: `09${Math.floor(10000000 + Math.random() * 90000000)}`,
+          status: CustomerStatus.WAITING_REPLY,
+          priority: CustomerPriority.URGENT,
+          notes: `Khách hàng thân thiết đặt lại đơn hàng qua Zalo của ${newUser.name}`,
+          title: 'Đặt hàng bổ sung đợt 2',
+          messages: [
+            {
+              dir: MessageDirection.INBOUND,
+              text: 'Em ơi lô hàng đợt trước dùng tốt lắm, bên em còn sẵn 50 bộ không em?',
+              timeAgoMinutes: 60,
+            },
+            {
+              dir: MessageDirection.OUTBOUND,
+              text: `Dạ chị Lan Phương ơi, kho bên em vừa về đợt hàng mới toanh ạ. Em giữ trước cho chị 50 bộ nhé ạ!`,
+              timeAgoMinutes: 45,
+            },
+            {
+              dir: MessageDirection.INBOUND,
+              text: 'Tốt quá, sắp xếp giao qua địa chỉ công ty chị trước thứ 6 này giúp chị nha.',
+              timeAgoMinutes: 30,
+            },
+          ],
+        },
+        {
+          fullName: 'Nguyễn Minh Tuấn (Khách mới)',
+          phone: `09${Math.floor(10000000 + Math.random() * 90000000)}`,
+          status: CustomerStatus.NEW,
+          priority: CustomerPriority.MEDIUM,
+          notes: `Khách hàng mới nhắn tin lần đầu qua Zalo của ${newUser.name}`,
+          title: 'Khách hàng mới hỏi thông tin sản phẩm',
+          messages: [
+            {
+              dir: MessageDirection.INBOUND,
+              text: 'Chào bạn, mình thấy bài viết giới thiệu sản phẩm nên muốn nhắn tin hỏi thêm thông tin qua Zalo.',
+              timeAgoMinutes: 15,
+            },
+            {
+              dir: MessageDirection.OUTBOUND,
+              text: `Dạ chào anh Tuấn, em là ${newUser.name} phụ trách tư vấn. Em gửi anh thông tin chi tiết các gói giải pháp bên em ngay nhé ạ!`,
+              timeAgoMinutes: 2,
+            },
+          ],
+        },
+      ];
 
-      const conversation = await tx.conversation.create({
-        data: {
-          customerId: customer.id,
-          salesUserId: newUser.id,
-          integrationConnectionId: connection.id,
-          channelType: 'ZALO',
-          title: `Tư vấn sản phẩm - ${customer.fullName}`,
-          isDemo: false,
-        },
-      });
+      for (let i = 0; i < initialContacts.length; i++) {
+        const item = initialContacts[i];
+        const custCount = await tx.customer.count();
+        const customer = await tx.customer.create({
+          data: {
+            code: `KH-${1000 + custCount + 1}`,
+            fullName: item.fullName,
+            phone: item.phone,
+            source: 'ZALO',
+            status: item.status,
+            priority: item.priority,
+            assignedToId: newUser.id,
+            notes: item.notes,
+            lastContactedAt: new Date(Date.now() - 5 * 60 * 1000),
+          },
+        });
 
-      await tx.message.create({
-        data: {
-          conversationId: conversation.id,
-          direction: MessageDirection.INBOUND,
-          contentType: MessageContentType.TEXT,
-          textContent: 'Dạ em chào anh/chị, em thấy thông tin sản phẩm bên mình nên nhắn tin tìm hiểu thêm ạ.',
-          sentAt: new Date(Date.now() - 5 * 60 * 1000),
-          isDemo: false,
-        },
-      });
+        const conversation = await tx.conversation.create({
+          data: {
+            customerId: customer.id,
+            salesUserId: newUser.id,
+            integrationConnectionId: connection.id,
+            channelType: 'ZALO',
+            title: item.title,
+            isDemo: false,
+          },
+        });
 
-      await tx.message.create({
-        data: {
-          conversationId: conversation.id,
-          direction: MessageDirection.OUTBOUND,
-          contentType: MessageContentType.TEXT,
-          textContent: `Dạ em chào anh/chị, em là ${newUser.name} phụ trách tư vấn. Em gửi anh/chị thông tin chi tiết và chương trình ưu đãi ngay nhé!`,
-          sentAt: new Date(),
-          isDemo: false,
-        },
-      });
+        for (const msg of item.messages) {
+          await tx.message.create({
+            data: {
+              conversationId: conversation.id,
+              direction: msg.dir,
+              contentType: MessageContentType.TEXT,
+              textContent: msg.text,
+              sentAt: new Date(Date.now() - msg.timeAgoMinutes * 60 * 1000),
+              isDemo: false,
+            },
+          });
+        }
+      }
 
       // Cập nhật trạng thái Invite thành COMPLETED
       await tx.saleInvite.update({

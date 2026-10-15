@@ -582,7 +582,7 @@ export default function SalesPage() {
                 Để điện thoại quét Zalo vào được ngay:
               </p>
               <p className="text-[11px] text-amber-800 leading-relaxed">
-                1. Điện thoại cần <strong>bật kết nối chung mạng Wi-Fi</strong> với máy tính này (máy tính đang có IP Wi-Fi là <code className="bg-amber-100 font-mono px-1 py-0.5 rounded font-bold">{inviteData?.localIp || '192.168.1.37'}</code>).
+                1. Điện thoại cần <strong>bật kết nối chung mạng Wi-Fi</strong> với máy tính này (máy tính đang có IP Wi-Fi là <code className="bg-amber-100 font-mono px-1 py-0.5 rounded font-bold">{inviteData?.localIp || '192.168.1.43'}</code>).
                 <br />
                 2. Chị cũng có thể bấm <strong>"Sao chép link"</strong> ở bên dưới để gửi trực tiếp qua tin nhắn Zalo cho nhân viên bấm vào luôn nhé!
               </p>
