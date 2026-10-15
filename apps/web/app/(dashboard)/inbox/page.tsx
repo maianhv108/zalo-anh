@@ -40,6 +40,7 @@ export default function InboxPage() {
   const [panelConversations, setPanelConversations] = useState<Record<string, any>>({});
   const [replyTexts, setReplyTexts] = useState<Record<string, string>>({});
   const [isSending, setIsSending] = useState<Record<string, boolean>>({});
+  const [isSimulating, setIsSimulating] = useState<Record<string, boolean>>({});
 
   const loadInitialData = async () => {
     setIsLoading(true);
@@ -65,6 +66,48 @@ export default function InboxPage() {
   useEffect(() => {
     loadInitialData();
   }, []);
+
+  // CẬP NHẬT LIÊN TỤC THỜI GIAN THỰC (Auto-polling mỗi 3 giây)
+  // Đảm bảo tin nhắn mới phát sinh từ Zalo của nhân viên hoặc khách hàng tự động xuất hiện trên Webapp
+  useEffect(() => {
+    const timer = setInterval(async () => {
+      try {
+        // Tải danh sách hội thoại ngầm không gián đoạn thao tác
+        const query = selectedSaleId ? `?salesUserId=${selectedSaleId}` : '';
+        const convs = await fetchApi(`/conversations${query}`);
+        if (convs && Array.isArray(convs)) {
+          setConversations(convs);
+        }
+
+        // Cập nhật nội dung các khung chat đang mở
+        if (openPanelIds.length > 0) {
+          const updates = await Promise.all(
+            openPanelIds.map(async (id) => {
+              try {
+                const res = await fetchApi(`/conversations/${id}`);
+                return { id, res };
+              } catch {
+                return null;
+              }
+            })
+          );
+          setPanelConversations((prev) => {
+            const next = { ...prev };
+            updates.forEach((item) => {
+              if (item?.res) {
+                next[item.id] = item.res;
+              }
+            });
+            return next;
+          });
+        }
+      } catch (err) {
+        // Bỏ qua lỗi polling ngầm
+      }
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, [selectedSaleId, openPanelIds]);
 
   const loadConversations = async (saleId?: string) => {
     try {
@@ -144,6 +187,30 @@ export default function InboxPage() {
     }
   };
 
+  // Mô phỏng khách hàng gửi tin nhắn mới vào Zalo để kiểm tra luồng nhận tin nhắn liên tục
+  const handleSimulateInbound = async (convId: string) => {
+    setIsSimulating((prev) => ({ ...prev, [convId]: true }));
+    try {
+      await fetchApi(`/messages/${convId}/simulate-inbound`, {
+        method: 'POST',
+      });
+      // Tải lại ngay hội thoại này
+      const updated = await fetchApi(`/conversations/${convId}`);
+      setPanelConversations((prev) => ({ ...prev, [convId]: updated }));
+
+      // Cập nhật danh sách hội thoại bên trái
+      const query = selectedSaleId ? `?salesUserId=${selectedSaleId}` : '';
+      const convs = await fetchApi(`/conversations${query}`);
+      if (convs && Array.isArray(convs)) {
+        setConversations(convs);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Lỗi khi mô phỏng tin nhắn từ khách hàng.');
+    } finally {
+      setIsSimulating((prev) => ({ ...prev, [convId]: false }));
+    }
+  };
+
   const filteredConversations = conversations.filter((c) => {
     if (!search) return true;
     const s = search.toLowerCase();
@@ -168,10 +235,19 @@ export default function InboxPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
+          {/* Live Sync Status Badge */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200/80 rounded-xl text-xs font-semibold shadow-xs">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span>Live Sync: Cập nhật liên tục</span>
+          </div>
+
           <Button variant="outline" size="sm" onClick={() => loadConversations(selectedSaleId)}>
             <RefreshCw className="h-3.5 w-3.5" />
-            <span>Làm mới hội thoại</span>
+            <span>Làm mới</span>
           </Button>
         </div>
       </div>
@@ -307,7 +383,19 @@ export default function InboxPage() {
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSimulateInbound(convId)}
+                        disabled={isSimulating[convId]}
+                        className="h-7 text-[10px] text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200 flex items-center gap-1 px-2 font-medium"
+                        title="Mô phỏng 1 tin nhắn mới từ khách hàng để kiểm tra tính năng cập nhật liên tục thời gian thực"
+                      >
+                        <Sparkles className="h-3 w-3 text-emerald-600" />
+                        <span>{isSimulating[convId] ? 'Đang gửi...' : 'Khách nhắn mới'}</span>
+                      </Button>
+
                       <button
                         onClick={() => closePanel(convId)}
                         className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors"

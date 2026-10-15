@@ -13,6 +13,9 @@ import {
   Building2,
   XCircle,
   MessageSquare,
+  Users,
+  Zap,
+  Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -26,12 +29,13 @@ export default function InviteAcceptPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Form state: Chỉ cần Tên và Số điện thoại Zalo (Không cần mật khẩu hay email phức tạp)
+  // Form state: Họ tên, Số điện thoại Zalo và Checkbox đồng ý chia sẻ dữ liệu
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
     zaloAccountName: '',
   });
+  const [hasConsent, setHasConsent] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [newUser, setNewUser] = useState<any>(null);
@@ -70,6 +74,11 @@ export default function InviteAcceptPage() {
   // 2. Xác nhận liên kết Zalo vào hệ thống Admin
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!hasConsent) {
+      setErrorMsg('Vui lòng tích đồng ý chia sẻ dữ liệu và đồng bộ Zalo để tiếp tục.');
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMsg(null);
 
@@ -103,14 +112,14 @@ export default function InviteAcceptPage() {
           <QrCode className="h-6 w-6" />
         </div>
         <h1 className="text-2xl font-black text-white tracking-tight">Sales Zalo CRM</h1>
-        <p className="text-xs text-blue-200/70 mt-1">Cổng Kết Nối & Giám Sát Hội Thoại Zalo Doanh Nghiệp</p>
+        <p className="text-xs text-blue-200/70 mt-1">Cổng Kết Nối & Đồng Bộ Zalo Doanh Nghiệp</p>
       </div>
 
       <div className="w-full max-w-md relative z-10">
         {isLoading ? (
           <Card className="p-8 text-center bg-white/95 backdrop-blur shadow-2xl border-white/20">
             <div className="animate-spin h-8 w-8 border-3 border-blue-600 border-t-transparent rounded-full mx-auto mb-4" />
-            <h3 className="text-sm font-bold text-slate-800">Đang xác thực liên kết Zalo...</h3>
+            <h3 className="text-sm font-bold text-slate-800">Đang tải yêu cầu liên kết Zalo...</h3>
             <p className="text-xs text-slate-500 mt-1">Vui lòng chờ trong giây lát</p>
           </Card>
         ) : isSuccess ? (
@@ -120,9 +129,9 @@ export default function InviteAcceptPage() {
               <CheckCircle2 className="h-9 w-9" />
             </div>
 
-            <h3 className="text-xl font-bold text-slate-900">Đã Liên Kết Zalo Thành Công!</h3>
+            <h3 className="text-xl font-bold text-slate-900">Đã Liên Kết & Đồng Bộ Zalo Thành Công!</h3>
             <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">
-              Tài khoản Zalo của bạn đã được kết nối vào hệ thống quản trị của Quản lý.
+              Tài khoản Zalo của bạn đã được kết nối vào Webapp quản lý của Quản trị viên.
             </p>
 
             <div className="mt-5 p-4 bg-emerald-50/60 border border-emerald-200 rounded-xl text-left text-xs space-y-2">
@@ -139,14 +148,18 @@ export default function InviteAcceptPage() {
                 <span className="font-medium text-slate-800 font-mono">{newUser?.phone}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Đội nhóm:</span>
-                <span className="font-semibold text-emerald-700">{newUser?.teamName || 'Đội Kinh Doanh'}</span>
+                <span className="text-slate-500">Danh bạ khách hàng:</span>
+                <span className="font-semibold text-emerald-700">Đã đồng bộ lên Webapp</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Trạng thái giám sát:</span>
+                <span className="text-slate-500">Đoạn chat & Tin nhắn:</span>
+                <span className="font-semibold text-emerald-700">Đã đồng bộ lên Webapp</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Cập nhật khi phát sinh:</span>
                 <span className="font-semibold text-blue-600 inline-flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
-                  Đang hoạt động (ACTIVE)
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
+                  Tự động liên tục (Real-time)
                 </span>
               </div>
             </div>
@@ -154,7 +167,7 @@ export default function InviteAcceptPage() {
             <div className="mt-5 p-3.5 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-900 text-left flex items-start gap-2.5">
               <MessageSquare className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
               <span>
-                <strong>Bạn đã hoàn tất!</strong> Bạn có thể đóng tab này lại và tiếp tục sử dụng ứng dụng Zalo trên điện thoại để nhắn tin, tư vấn và chăm sóc khách hàng như bình thường.
+                <strong>Hoàn tất!</strong> Bạn có thể đóng tab này lại và tiếp tục sử dụng ứng dụng Zalo trên điện thoại để nhắn tin, gọi điện tư vấn khách hàng như bình thường.
               </span>
             </div>
 
@@ -166,7 +179,7 @@ export default function InviteAcceptPage() {
                 }
               }}
             >
-              Hoàn tất & Đóng trang
+              Đã Xong - Đóng Trang Này
             </Button>
           </Card>
         ) : errorMsg && (!inviteData || inviteData.isExpired || inviteData.status === 'COMPLETED' || inviteData.status === 'CANCELLED') ? (
@@ -186,16 +199,16 @@ export default function InviteAcceptPage() {
             </p>
           </Card>
         ) : (
-          /* FORM XÁC NHẬN LIÊN KẾT ZALO CHO NHÂN VIÊN */
+          /* FORM XÁC NHẬN LIÊN KẾT & ĐỒNG BỘ ZALO CHO NHÂN VIÊN */
           <Card className="p-6 bg-white shadow-2xl border-white/20">
             <div className="border-b border-slate-100 pb-4 mb-4">
               <div className="flex items-center gap-2 text-xs font-semibold text-blue-600 mb-1">
                 <Sparkles className="h-4 w-4" />
                 <span>Liên kết Zalo Doanh Nghiệp</span>
               </div>
-              <h2 className="text-lg font-bold text-slate-900">Xác Nhận Kết Nối Zalo Với Quản Trị Viên</h2>
+              <h2 className="text-lg font-bold text-slate-900">Ủy Quyền Đồng Bộ Zalo Với Webapp Quản Lý</h2>
               <p className="text-xs text-slate-500 mt-1">
-                Tài khoản Zalo trên điện thoại này sẽ được liên kết vào hệ thống quản lý của Quản lý để hỗ trợ chăm sóc khách hàng.
+                Tài khoản Zalo trên điện thoại này sẽ được liên kết vào hệ thống quản lý của Quản trị viên để giám sát tin nhắn và danh bạ khách hàng.
               </p>
 
               <div className="mt-3 flex items-center gap-2 p-2.5 bg-blue-50/70 border border-blue-200 rounded-xl text-xs text-blue-900">
@@ -246,7 +259,52 @@ export default function InviteAcceptPage() {
                     className="w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium font-mono"
                   />
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1">Số điện thoại đăng ký tài khoản Zalo bạn đang sử dụng</p>
+                <p className="text-[11px] text-slate-400 mt-1">Số điện thoại đăng ký tài khoản Zalo bạn đang dùng</p>
+              </div>
+
+              {/* HỘP XÁC NHẬN ĐỒNG Ý CHIA SẺ DỮ LIỆU & ĐỒNG BỘ ZALO */}
+              <div className="p-4 bg-gradient-to-br from-blue-50/90 to-indigo-50/70 rounded-2xl border border-blue-200 text-xs space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0">
+                    <Sparkles className="h-3.5 w-3.5" />
+                  </div>
+                  <h4 className="font-bold text-slate-900 text-xs">
+                    Bạn có đồng ý chia sẻ dữ liệu và tự động đồng bộ Zalo vào webapp không?
+                  </h4>
+                </div>
+
+                <div className="space-y-2 pt-1 border-t border-blue-200/60 text-slate-700">
+                  <div className="flex items-start gap-2">
+                    <Users className="h-3.5 w-3.5 text-blue-600 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Đồng bộ danh bạ khách hàng:</strong> Tự động cập nhật danh sách khách hàng lên Webapp của Quản lý.
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <MessageSquare className="h-3.5 w-3.5 text-blue-600 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Đồng bộ đoạn chat & tin nhắn:</strong> Toàn bộ lịch sử trao đổi tư vấn sẽ hiển thị trong Hộp thư CRM.
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Zap className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Cập nhật liên tục khi phát sinh:</strong> Tin nhắn mới từ bạn hoặc khách hàng sẽ tự động cập nhật liên tục lên Webapp.
+                    </span>
+                  </div>
+                </div>
+
+                <label className="flex items-start gap-2.5 pt-2 border-t border-blue-200/80 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={hasConsent}
+                    onChange={(e) => setHasConsent(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 mt-0.5"
+                  />
+                  <span className="text-[11px] font-semibold text-slate-900">
+                    Tôi đồng ý chia sẻ dữ liệu và cho phép đồng bộ Zalo vào Webapp quản lý
+                  </span>
+                </label>
               </div>
 
               {/* Security policy note */}
@@ -259,10 +317,24 @@ export default function InviteAcceptPage() {
 
               <Button
                 type="submit"
-                disabled={isSubmitting}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/25 transition-all text-sm mt-2"
+                disabled={isSubmitting || !hasConsent}
+                className={`w-full py-3 text-white font-semibold rounded-xl shadow-lg transition-all text-sm mt-2 flex items-center justify-center gap-2 ${
+                  hasConsent
+                    ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/25'
+                    : 'bg-slate-400 cursor-not-allowed opacity-70'
+                }`}
               >
-                {isSubmitting ? 'Đang kích hoạt liên kết...' : 'Xác Nhận Liên Kết Zalo Ngay'}
+                {isSubmitting ? (
+                  <>
+                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Đang kích hoạt đồng bộ Zalo...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span>Tôi Đồng Ý Chia Sẻ & Đồng Bộ Zalo Ngay</span>
+                  </>
+                )}
               </Button>
             </form>
           </Card>
@@ -275,3 +347,4 @@ export default function InviteAcceptPage() {
     </div>
   );
 }
+

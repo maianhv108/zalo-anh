@@ -21,4 +21,13 @@ export class MessagesController {
   ) {
     return this.messagesService.sendMessage(conversationId, body, currentUser);
   }
+
+  @Post(':conversationId/simulate-inbound')
+  @ApiOperation({ summary: 'Mô phỏng khách hàng nhắn tin mới vào Zalo' })
+  async simulateInboundMessage(
+    @Param('conversationId') conversationId: string,
+    @Body() body?: { textContent?: string },
+  ) {
+    return this.messagesService.simulateInboundMessage(conversationId, body?.textContent);
+  }
 }

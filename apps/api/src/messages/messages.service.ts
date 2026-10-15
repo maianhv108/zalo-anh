@@ -96,4 +96,53 @@ export class MessagesService {
 
     return message;
   }
+
+  /**
+   * Mô phỏng tin nhắn mới phát sinh từ khách hàng gửi vào Zalo
+   * Phục vụ kiểm thử luồng cập nhật tin nhắn liên tục thời gian thực lên Webapp của Admin
+   */
+  async simulateInboundMessage(conversationId: string, customText?: string) {
+    const conversation = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: { customer: true, salesUser: true },
+    });
+
+    if (!conversation) {
+      throw new NotFoundException('Không tìm thấy hội thoại.');
+    }
+
+    const sampleInbounds = [
+      'Dạ bạn ơi, mẫu này có sẵn để giao trong hôm nay không ạ?',
+      'Mình vừa chuyển khoản đặt cọc rồi nhé, bạn check tài khoản giúp mình nha!',
+      'Gửi giúp mình catalogue và bảng màu thực tế qua Zalo này với!',
+      'Cho mình xin địa chỉ cửa hàng gần nhất để mình qua xem trực tiếp nhé.',
+      'Sản phẩm bên mình có được hỗ trợ bảo hành chính hãng tận nơi không bạn?',
+      'Ok chốt lấy thêm 2 đơn nhé em, vẫn giao về địa chỉ cũ giúp chị!',
+    ];
+
+    const content = customText || sampleInbounds[Math.floor(Math.random() * sampleInbounds.length)];
+
+    const message = await this.prisma.message.create({
+      data: {
+        conversationId,
+        direction: MessageDirection.INBOUND,
+        contentType: MessageContentType.TEXT,
+        textContent: content,
+        sentAt: new Date(),
+        sourceType: DataSource.CONNECTOR,
+        isDemo: conversation.isDemo,
+        deliveryStatus: 'DELIVERED',
+      },
+    });
+
+    await this.prisma.conversation.update({
+      where: { id: conversationId },
+      data: {
+        lastMessageAt: new Date(),
+        unreadCount: { increment: 1 },
+      },
+    });
+
+    return message;
+  }
 }
