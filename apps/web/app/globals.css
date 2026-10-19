@@ -1,0 +1,178 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #090d16;
+  --foreground: #f8fafc;
+  --sidebar-bg: #060a14;
+  --sidebar-hover: #121c32;
+  --sidebar-active: #ef4444;
+  --primary: #ef4444;
+  --primary-hover: #dc2626;
+  --card-bg: #0d1527;
+  --card-border: #1e2c47;
+  --border: #1e2c47;
+}
+
+body {
+  background-color: #090d16 !important;
+  color: #f1f5f9;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Global Dark Mode Overrides for Slate & White utilities */
+.dark, html.dark {
+  color-scheme: dark;
+}
+
+/* Background overrides for dark aesthetics */
+.dark .bg-white {
+  background-color: #0d1527 !important;
+}
+
+.dark .bg-slate-50,
+.dark .bg-slate-50\/30,
+.dark .bg-slate-50\/50,
+.dark .bg-slate-50\/70,
+.dark .bg-slate-100 {
+  background-color: #080d19 !important;
+}
+
+.dark .bg-slate-100\/80,
+.dark .bg-slate-200,
+.dark .bg-slate-200\/60 {
+  background-color: #141f36 !important;
+}
+
+.dark .border-slate-100,
+.dark .border-slate-100\/80,
+.dark .border-slate-200,
+.dark .border-slate-200\/80,
+.dark .border-slate-300 {
+  border-color: #1a2842 !important;
+}
+
+.dark .text-slate-900 {
+  color: #f8fafc !important;
+}
+
+.dark .text-slate-800 {
+  color: #f1f5f9 !important;
+}
+
+.dark .text-slate-700 {
+  color: #e2e8f0 !important;
+}
+
+.dark .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+.dark .text-slate-500 {
+  color: #64748b !important;
+}
+
+.dark .text-slate-400 {
+  color: #475569 !important;
+}
+
+/* Dark mode inputs, selects & textareas */
+.dark input[type="text"],
+.dark input[type="search"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark input[type="tel"],
+.dark select,
+.dark textarea {
+  background-color: #060a14 !important;
+  border-color: #1a2842 !important;
+  color: #f8fafc !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #475569 !important;
+}
+
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+  border-color: #ef4444 !important;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25) !important;
+}
+
+/* Dark Table Styles */
+.dark table {
+  color: #e2e8f0;
+}
+
+.dark thead tr {
+  background-color: #080d19 !important;
+  border-bottom: 1px solid #1a2842 !important;
+}
+
+.dark tbody tr {
+  border-bottom: 1px solid #141f36 !important;
+}
+
+.dark tbody tr:hover {
+  background-color: #101a2e !important;
+}
+
+/* Hover effects */
+.dark .hover\:bg-slate-50:hover,
+.dark .hover\:bg-slate-100:hover {
+  background-color: #121c32 !important;
+}
+
+.dark .hover\:bg-slate-200\/60:hover {
+  background-color: #16243f !important;
+}
+
+/* Custom Sleek Dark Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #060a14;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1a2842;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2a3d60;
+}
+
+/* Dark Glassmorphism & Cyber Luxe Card Effects */
+.glass-panel {
+  background: rgba(13, 21, 39, 0.8) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark-glow-red {
+  box-shadow: 0 0 25px -5px rgba(239, 68, 68, 0.25);
+}
+
+.dark-glow-subtle {
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

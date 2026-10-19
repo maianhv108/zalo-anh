@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "TourLuk Tool Zalo - Tiện Ích Đồng Bộ Zalo Web",
+  "version": "1.0.0",
+  "description": "Tự động đồng bộ khách hàng và tin nhắn thật từ Zalo Web (chat.zalo.me) về Hệ thống TourLuk Tool Zalo.",
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://chat.zalo.me/*",
+    "http://localhost:4000/*",
+    "http://127.0.0.1:4000/*",
+    "http://10.*/*",
+    "http://192.168.*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://chat.zalo.me/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "TourLuk Tool Zalo Sync",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  }
+}
