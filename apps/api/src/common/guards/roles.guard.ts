@@ -12,10 +12,14 @@ export class RolesGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
+    const { user } = context.switchToHttp().getRequest();
+    if (user && user.role === UserRole.SALE) {
+      throw new ForbiddenException('Nhân viên Sale không có quyền truy cập hệ thống quản trị CRM.');
+    }
+
     if (!requiredRoles || requiredRoles.length === 0) {
       return true;
     }
-    const { user } = context.switchToHttp().getRequest();
     if (!user) {
       throw new ForbiddenException('Yêu cầu xác thực tài khoản trước khi kiểm tra quyền.');
     }

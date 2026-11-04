@@ -33,15 +33,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       data.sales.forEach((s) => {
         const opt = document.createElement('option');
         opt.value = s.code;
-        opt.textContent = `${s.code} - ${s.name} (${s.phone || 'Zalo'})`;
+        opt.textContent = s.label || `${s.code} - ${s.name} (${s.phone || 'Zalo'})`;
         if (s.code === currentSalesCode) opt.selected = true;
         salesSelect.appendChild(opt);
       });
+
+      // Tự động chọn Zalo OA nếu tab đang mở là oa.zalo.me
+      try {
+        const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (activeTab && activeTab.url && activeTab.url.includes('oa.zalo.me')) {
+          if (salesSelect.querySelector('option[value="OA"]')) {
+            salesSelect.value = 'OA';
+          }
+        }
+      } catch (e) {}
+
       currentSalesCode = salesSelect.value;
       await chrome.storage.local.set({ salesCode: currentSalesCode });
     }
 
-    statusText.innerText = 'Sẵn sàng đồng bộ Zalo Web';
+    statusText.innerText = currentSalesCode === 'OA' ? 'Sẵn sàng đồng bộ Zalo OA' : 'Sẵn sàng đồng bộ Zalo Web';
     badgeLabel.innerText = 'Online';
     statusBadge.className = 'badge-status status-active';
 
@@ -51,13 +62,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     statusText.innerText = 'Chưa bật Webapp (Port 4000)';
     badgeLabel.innerText = 'Offline';
     statusBadge.className = 'badge-status status-error';
-    salesSelect.innerHTML = '<option value="SALE01">SALE01 - Mặc định</option>';
+    salesSelect.innerHTML = '<option value="OA">OA - Zalo OA Doanh Nghiệp</option>';
   }
 
   // 3. Khi đổi nhân viên Sale
   salesSelect.addEventListener('change', async () => {
     currentSalesCode = salesSelect.value;
     await chrome.storage.local.set({ salesCode: currentSalesCode });
+    statusText.innerText = currentSalesCode === 'OA' ? 'Sẵn sàng đồng bộ Zalo OA' : 'Sẵn sàng đồng bộ Zalo Web';
     loadStats(serverUrl, currentSalesCode);
   });
 
@@ -73,19 +85,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (!tab || !tab.url || !tab.url.includes('chat.zalo.me')) {
-        alert('Vui lòng mở tab Zalo Web (chat.zalo.me) trước khi bấm đồng bộ nhé!');
+      const isZaloTab = tab && tab.url && tab.url.includes('zalo.me');
+      if (!isZaloTab) {
+        alert('Vui lòng mở tab Zalo Web (chat.zalo.me hoặc oa.zalo.me) trước khi bấm đồng bộ nhé!');
         btnSyncNow.innerText = '⚡ Đồng Bộ Cuộc Trò Chuyện Đang Mở';
         btnSyncNow.disabled = false;
         return;
       }
 
-      chrome.tabs.sendMessage(tab.id, { action: 'TRIGGER_MANUAL_SYNC' }, (response) => {
+      chrome.tabs.sendMessage(tab.id, { action: 'TRIGGER_MANUAL_SYNC', salesCode: currentSalesCode }, (response) => {
         btnSyncNow.innerText = '⚡ Đồng Bộ Cuộc Trò Chuyện Đang Mở';
         btnSyncNow.disabled = false;
 
         if (chrome.runtime.lastError) {
-          alert('Chưa tải xong Zalo Web. Hãy bấm F5 tải lại tab chat.zalo.me rồi thử lại nha!');
+          alert('Chưa nạp xong tiện ích trên Zalo. Hãy bấm F5 tải lại tab Zalo rồi thử lại nha!');
         } else if (response && response.success) {
           alert(`✅ ${response.message || 'Đồng bộ thành công lên Webapp!'}`);
           loadStats(serverUrl, currentSalesCode);

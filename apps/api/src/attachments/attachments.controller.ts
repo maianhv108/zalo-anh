@@ -1,10 +1,12 @@
-import { Controller, Get, Delete, Param, Query, UseGuards, Res } from '@nestjs/common';
+import { Controller, Get, Delete, Param, Query, UseGuards, Res, SetMetadata } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AttachmentsService } from './attachments.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { DataSource } from '@prisma/client';
 import { Response } from 'express';
+
+const Public = () => SetMetadata('isPublic', true);
 
 @ApiTags('Kho lưu trữ Tệp tin (Archive & Attachments)')
 @Controller('attachments')
@@ -39,6 +41,13 @@ export class AttachmentsController {
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(attachment.fileName)}"`);
     res.setHeader('Content-Type', attachment.mimeType || 'application/octet-stream');
     res.send(`Dữ liệu mẫu nội dung của tệp đính kèm: ${attachment.fileName}\nKhách hàng: ${attachment.customer?.fullName}\nNguồn: ${attachment.sourceType}`);
+  }
+
+  @Public()
+  @Get(':id/view')
+  @ApiOperation({ summary: 'Xem trực tiếp hình ảnh hoặc tệp tin lưu trữ' })
+  async viewFile(@Param('id') id: string, @Res() res: Response) {
+    return this.attachmentsService.streamFile(id, res);
   }
 
   @Delete(':id')

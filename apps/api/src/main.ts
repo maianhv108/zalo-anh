@@ -3,6 +3,10 @@ import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { json, urlencoded } from 'express';
+import * as express from 'express';
+import * as path from 'path';
+import * as fs from 'fs';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -28,8 +32,20 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
 
+  // Cấu hình Payload Limit (Hỗ trợ upload ảnh đại diện và ảnh tin nhắn đồng bộ)
+  app.use(json({ limit: '50mb' }));
+  app.use(urlencoded({ extended: true, limit: '50mb' }));
+
   // Global Prefix API v1
   app.setGlobalPrefix('api/v1');
+
+  // Phục vụ tĩnh ảnh lưu trữ tin nhắn Sale (bảo toàn hình ảnh 24/7)
+  const salesStorageDir = path.resolve(process.cwd(), 'data', 'sales-storage');
+  if (!fs.existsSync(salesStorageDir)) {
+    fs.mkdirSync(salesStorageDir, { recursive: true });
+  }
+  app.use('/sales-storage', express.static(salesStorageDir));
+  app.use('/api/v1/sales-storage', express.static(salesStorageDir));
 
   // Global Validation
   app.useGlobalPipes(

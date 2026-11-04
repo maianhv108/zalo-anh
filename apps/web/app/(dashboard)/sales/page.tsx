@@ -26,6 +26,10 @@ import {
   Wifi,
   Trash2,
   Laptop,
+  Edit3,
+  Camera,
+  Upload,
+  ImageIcon,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -73,6 +77,136 @@ export default function SalesPage() {
   });
   const [isCreatingSale, setIsCreatingSale] = useState(false);
   const [createSaleError, setCreateSaleError] = useState<string | null>(null);
+
+  // Chỉnh sửa thông tin nhân sự / quản trị viên
+  const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
+  const [editUserForm, setEditUserForm] = useState({
+    id: '',
+    name: '',
+    phone: '',
+    email: '',
+    zaloPhone: '',
+    zaloAccountName: '',
+    avatarUrl: '',
+    password: '',
+  });
+  const [isSavingUser, setIsSavingUser] = useState(false);
+  const [editUserError, setEditUserError] = useState<string | null>(null);
+
+  const handleOpenEditUser = (u: any) => {
+    setEditUserForm({
+      id: u.id,
+      name: u.name || '',
+      phone: u.phone || '',
+      email: u.email || '',
+      zaloPhone: u.zaloPhone || '',
+      zaloAccountName: u.zaloAccountName || '',
+      avatarUrl: u.avatarUrl || '',
+      password: '',
+    });
+    setEditUserError(null);
+    setIsEditUserModalOpen(true);
+  };
+
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setEditUserError('Vui lòng chọn file hình ảnh (JPG, PNG, WebP)');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setEditUserError('Dung lượng ảnh tối đa 5MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxDim = 300;
+        let w = img.width;
+        let h = img.height;
+        if (w > h && w > maxDim) {
+          h = Math.round((h * maxDim) / w);
+          w = maxDim;
+        } else if (h > maxDim) {
+          w = Math.round((w * maxDim) / h);
+          h = maxDim;
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, w, h);
+          const compressed = canvas.toDataURL('image/jpeg', 0.85);
+          setEditUserForm((prev) => ({ ...prev, avatarUrl: compressed }));
+        } else {
+          setEditUserForm((prev) => ({ ...prev, avatarUrl: reader.result as string }));
+        }
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editUserForm.name.trim()) {
+      setEditUserError('Vui lòng nhập họ và tên');
+      return;
+    }
+    if (!editUserForm.email.trim()) {
+      setEditUserError('Vui lòng nhập email');
+      return;
+    }
+
+    setIsSavingUser(true);
+    setEditUserError(null);
+    try {
+      const payload: any = {
+        name: editUserForm.name.trim(),
+        email: editUserForm.email.trim(),
+        phone: editUserForm.phone.trim() || undefined,
+        zaloPhone: editUserForm.zaloPhone.trim() || undefined,
+        zaloAccountName: editUserForm.zaloAccountName.trim() || undefined,
+        avatarUrl: editUserForm.avatarUrl || null,
+      };
+      if (editUserForm.password.trim()) {
+        payload.password = editUserForm.password.trim();
+      }
+
+      await fetchApi(`/users/${editUserForm.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      });
+
+      // Nếu đang sửa chính tài khoản đang đăng nhập, cập nhật localStorage để Topbar đổi tên ngay
+      try {
+        const stored = localStorage.getItem('sales_zalo_user');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed.id === editUserForm.id || parsed.code === 'ADMIN01') {
+            parsed.name = payload.name;
+            parsed.email = payload.email;
+            parsed.phone = payload.phone;
+            parsed.avatarUrl = payload.avatarUrl;
+            localStorage.setItem('sales_zalo_user', JSON.stringify(parsed));
+          }
+        }
+      } catch {}
+
+      setIsEditUserModalOpen(false);
+      loadData();
+    } catch (err: any) {
+      setEditUserError(err.message || 'Lỗi khi cập nhật thông tin người dùng');
+    } finally {
+      setIsSavingUser(false);
+    }
+  };
 
   // QR Invite State
   const [inviteTeamId, setInviteTeamId] = useState('');
@@ -425,11 +559,11 @@ export default function SalesPage() {
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
                         <div className="h-9 w-9 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shrink-0">
-                          {u.avatarUrl ? (
+                          {u.avatarUrl && !u.avatarUrl.includes('admin-avatar') && !u.avatarUrl.includes('dicebear') ? (
                             <img src={u.avatarUrl} alt={u.name} className="h-full w-full object-cover" />
                           ) : (
-                            <div className="h-full w-full flex items-center justify-center font-bold text-slate-500">
-                              {u.name.charAt(0)}
+                            <div className="h-full w-full bg-gradient-to-tr from-indigo-600 to-rose-600 flex items-center justify-center font-bold text-xs text-white">
+                              {u.name ? u.name.charAt(0).toUpperCase() : 'U'}
                             </div>
                           )}
                         </div>
@@ -499,6 +633,16 @@ export default function SalesPage() {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        <Button
+                          size="sm"
+                          onClick={() => handleOpenEditUser(u)}
+                          className="h-7 text-xs px-2.5 bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-1.5 font-bold shadow-sm"
+                          title="Chỉnh sửa thông tin thành viên (Ảnh, tên, SĐT, email)"
+                        >
+                          <Edit3 className="h-3.5 w-3.5" />
+                          <span>Sửa thông tin</span>
+                        </Button>
+
                         <Link href={`/sales/${u.id}`}>
                           <Button size="sm" variant="outline" className="h-7 text-xs px-2.5">
                             <span>Chi tiết & Tích hợp</span>
@@ -1094,6 +1238,172 @@ export default function SalesPage() {
               className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
             >
               {isCreatingSale ? 'Đang tạo hồ sơ...' : 'Tạo Nhân Viên Ngay'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal Chỉnh Sửa Thông Tin Người Dùng / Quản Trị */}
+      <Modal
+        isOpen={isEditUserModalOpen}
+        onClose={() => setIsEditUserModalOpen(false)}
+        title="Chỉnh Sửa Thông Tin Hồ Sơ"
+        description="Cập nhật họ tên, số điện thoại thật, email và mật khẩu tài khoản"
+        maxWidth="md"
+      >
+        <form onSubmit={handleSaveUser} className="space-y-4">
+          {editUserError && (
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600" />
+              <span>{editUserError}</span>
+            </div>
+          )}
+
+          {/* Chọn ảnh đại diện cho nhân sự */}
+          <div className="flex items-center gap-4 p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+            <div className="relative shrink-0">
+              {editUserForm.avatarUrl && !editUserForm.avatarUrl.includes('admin-avatar') && !editUserForm.avatarUrl.includes('dicebear') ? (
+                <img
+                  src={editUserForm.avatarUrl}
+                  alt="Avatar"
+                  className="w-16 h-16 rounded-full object-cover border-2 border-indigo-500 shadow-md"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-indigo-600 to-rose-600 flex items-center justify-center font-bold text-xl text-white shadow-md">
+                  {editUserForm.name ? editUserForm.name.charAt(0).toUpperCase() : <Camera className="w-7 h-7" />}
+                </div>
+              )}
+            </div>
+
+            <div className="flex-1 space-y-1.5">
+              <label className="block text-xs font-bold text-slate-800">
+                Ảnh đại diện (Avatar)
+              </label>
+              <div className="flex items-center gap-2">
+                <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:border-indigo-500 hover:text-indigo-600 rounded-xl text-xs font-semibold text-slate-700 shadow-sm transition-all">
+                  <Upload className="w-3.5 h-3.5 text-indigo-500" />
+                  <span>Chọn ảnh từ máy</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarFileChange}
+                    className="hidden"
+                  />
+                </label>
+                {editUserForm.avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setEditUserForm((prev) => ({ ...prev, avatarUrl: '' }))}
+                    className="text-xs text-rose-600 hover:text-rose-700 font-semibold px-2 py-1"
+                  >
+                    Xóa ảnh
+                  </button>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Hỗ trợ chọn ảnh từ máy tính (JPG, PNG). Ảnh tự động tối ưu hóa.
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Họ và tên <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              value={editUserForm.name}
+              onChange={(e) => setEditUserForm({ ...editUserForm, name: e.target.value })}
+              placeholder="Ví dụ: Nguyễn Thị Hoa"
+              className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Email đăng nhập <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="email"
+              required
+              value={editUserForm.email}
+              onChange={(e) => setEditUserForm({ ...editUserForm, email: e.target.value })}
+              placeholder="Ví dụ: admin@tourluk.com"
+              className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-mono"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Số điện thoại thật
+            </label>
+            <input
+              type="tel"
+              value={editUserForm.phone}
+              onChange={(e) => setEditUserForm({ ...editUserForm, phone: e.target.value })}
+              placeholder="Ví dụ: 0988776655"
+              className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-mono"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Số điện thoại Zalo
+              </label>
+              <input
+                type="tel"
+                value={editUserForm.zaloPhone}
+                onChange={(e) => setEditUserForm({ ...editUserForm, zaloPhone: e.target.value })}
+                placeholder="Ví dụ: 0988776655"
+                className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-mono text-xs"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Tên Zalo hiển thị
+              </label>
+              <input
+                type="text"
+                value={editUserForm.zaloAccountName}
+                onChange={(e) => setEditUserForm({ ...editUserForm, zaloAccountName: e.target.value })}
+                placeholder="Ví dụ: Hoa TourLuk"
+                className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-xs"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Đổi mật khẩu mới (để trống nếu giữ nguyên)
+            </label>
+            <input
+              type="password"
+              value={editUserForm.password}
+              onChange={(e) => setEditUserForm({ ...editUserForm, password: e.target.value })}
+              placeholder="Để trống nếu không đổi mật khẩu"
+              className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isSavingUser}
+              onClick={() => setIsEditUserModalOpen(false)}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={isSavingUser}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
+            >
+              {isSavingUser ? 'Đang lưu...' : 'Lưu Thay Đổi'}
             </Button>
           </div>
         </form>

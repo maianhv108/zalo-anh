@@ -6,13 +6,19 @@ import { UserRole } from '@prisma/client';
 export class ConversationsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(query: { salesUserId?: string; search?: string; isDemo?: boolean }, currentUser: any) {
-    const where: any = {};
+  async findAll(query: { salesUserId?: string; channelType?: string; search?: string; isDemo?: boolean }, currentUser: any) {
+    const where: any = {
+      customer: { deletedAt: null },
+    };
 
     if (currentUser.role === UserRole.SALE) {
       where.salesUserId = currentUser.id;
     } else if (query.salesUserId) {
       where.salesUserId = query.salesUserId;
+    }
+
+    if (query.channelType) {
+      where.channelType = query.channelType;
     }
 
     if (query.isDemo !== undefined) {
@@ -85,7 +91,7 @@ export class ConversationsService {
       },
     });
 
-    if (!conv) {
+    if (!conv || (conv.customer as any)?.deletedAt) {
       throw new NotFoundException('Không tìm thấy hội thoại.');
     }
 

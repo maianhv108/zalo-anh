@@ -1,6 +1,9 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { DataSource, UserRole, AuditAction } from '@prisma/client';
+import { Response } from 'express';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class AttachmentsService {
@@ -72,5 +75,26 @@ export class AttachmentsService {
     });
 
     return { success: true, message: 'Đã xóa tệp lưu trữ thành công.' };
+  }
+
+  async streamFile(id: string, res: Response) {
+    const attachment = await this.prisma.attachment.findUnique({
+      where: { id },
+    });
+    if (!attachment) {
+      throw new NotFoundException('Không tìm thấy tệp đính kèm.');
+    }
+
+    let resolvedPath = path.resolve(process.cwd(), attachment.filePath.replace(/^\//, ''));
+    if (attachment.filePath.startsWith('/sales-storage')) {
+      resolvedPath = path.resolve(process.cwd(), 'data', attachment.filePath.replace(/^\//, ''));
+    }
+
+    if (fs.existsSync(resolvedPath)) {
+      res.setHeader('Content-Type', attachment.mimeType || 'image/jpeg');
+      return res.sendFile(resolvedPath);
+    }
+
+    throw new NotFoundException('Tệp tin không tồn tại trên hệ thống lưu trữ.');
   }
 }

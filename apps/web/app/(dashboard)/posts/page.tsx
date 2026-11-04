@@ -24,6 +24,9 @@ import {
   ShieldCheck,
   ChevronRight,
   ExternalLink,
+  Building2,
+  ScrollText,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,6 +34,9 @@ import { Modal } from '@/components/ui/modal';
 import { DemoBadge } from '@/components/ui/demo-badge';
 import { fetchApi } from '@/lib/api';
 import { formatDate, formatShortDate } from '@/lib/utils';
+import { ZaloOaPostsManager } from '@/components/zalo-oa/zalo-oa-posts-manager';
+import { TourContentManager } from '@/components/zalo-oa/tour-content-manager';
+import { TourArticleWorkflow } from '@/components/zalo-oa/tour-article-workflow';
 
 interface SaleAccount {
   id: string;
@@ -97,7 +103,10 @@ const SAMPLE_IMAGES = [
   },
 ];
 
+export type PostTab = 'personal' | 'oa' | 'tour' | 'workflow';
+
 export default function PostsPage() {
+  const [activeTab, setActiveTab] = useState<PostTab>('personal');
   const [posts, setPosts] = useState<BroadcastPost[]>([]);
   const [availableAccounts, setAvailableAccounts] = useState<SaleAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -145,7 +154,29 @@ export default function PostsPage() {
 
   useEffect(() => {
     loadData();
+
+    if (typeof window !== 'undefined') {
+      const handleUrlTab = () => {
+        const params = new URLSearchParams(window.location.search);
+        const tab = params.get('tab');
+        if (tab === 'oa' || tab === 'tour' || tab === 'workflow' || tab === 'personal') {
+          setActiveTab(tab as PostTab);
+        }
+      };
+      handleUrlTab();
+      window.addEventListener('popstate', handleUrlTab);
+      return () => window.removeEventListener('popstate', handleUrlTab);
+    }
   }, []);
+
+  const handleSwitchTab = (tab: PostTab) => {
+    setActiveTab(tab);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', tab);
+      window.history.pushState({}, '', url.toString());
+    }
+  };
 
   // Toggle select all accounts
   const handleToggleSelectAll = () => {
@@ -258,255 +289,374 @@ export default function PostsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      {/* Top Hub Header */}
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-[#162035]">
         <div>
-          <div className="flex items-center gap-2.5">
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-              Đăng Bài Đồng Loạt Zalo
-            </h2>
-            <DemoBadge />
-          </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Soạn một bài đăng và đăng đồng loạt lên Nhật ký Zalo của tất cả hoặc từng tài khoản nhân viên bạn chọn.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <Button variant="outline" size="sm" onClick={loadData} className="gap-1.5">
-            <RefreshCw className="h-3.5 w-3.5" />
-            <span>Làm mới</span>
-          </Button>
-
-          <Button
-            size="sm"
-            onClick={() => setIsModalOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5 shadow-sm shadow-blue-500/20"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Tạo Bài Đăng Đồng Loạt</span>
-          </Button>
-        </div>
-      </div>
-
-      {/* Stats Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-4 bg-white border-slate-200 shadow-xs">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+            <div className="h-10 w-10 rounded-2xl bg-gradient-to-tr from-red-600 to-rose-500 text-white flex items-center justify-center shadow-md shadow-red-500/20">
               <Share2 className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs text-slate-500 font-medium">Chiến Dịch Đã Đăng</p>
-              <h3 className="text-xl font-bold text-slate-900 mt-0.5">{totalPublishedPosts} bài viết</h3>
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                  Trung Tâm Quản Lý Đăng Bài & Nội Dung
+                </h2>
+                <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300 dark:bg-rose-950/70 dark:text-rose-300 dark:border-rose-700/60">
+                  Control Hub
+                </span>
+                <DemoBadge />
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Kiểm soát tập trung: Đăng bài đồng loạt nick Sale cá nhân, Đăng bài & hẹn giờ Zalo OA, Kế hoạch Tour và Kho ảnh Google Drive.
+              </p>
             </div>
-          </div>
-        </Card>
-
-        <Card className="p-4 bg-white border-slate-200 shadow-xs">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-              <Users className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 font-medium">Tài Khoản Zalo Sẵn Sàng</p>
-              <h3 className="text-xl font-bold text-emerald-700 mt-0.5">{activeAccountsCount} tài khoản</h3>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4 bg-white border-slate-200 shadow-xs">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 font-medium">Lượt Đăng Lên Zalo</p>
-              <h3 className="text-xl font-bold text-slate-900 mt-0.5">{totalAccountPublications} lượt đăng</h3>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4 bg-white border-slate-200 shadow-xs">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-              <ThumbsUp className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 font-medium">Lượt Tương Tác Nhật Ký</p>
-              <h3 className="text-xl font-bold text-rose-700 mt-0.5">{totalSimulatedLikes} tương tác</h3>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Main Posts Feed / List */}
-      <Card className="bg-white border-slate-200 overflow-hidden shadow-xs">
-        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <h3 className="font-bold text-sm text-slate-900">
-            Danh Sách Bài Đăng Đồng Loạt ({filteredPosts.length})
-          </h3>
-
-          <div className="w-full sm:w-72">
-            <input
-              type="text"
-              placeholder="Tìm kiếm bài đăng theo tiêu đề, nội dung..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:ring-1 focus:ring-blue-500 focus:bg-white transition-all"
-            />
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="p-12 text-center text-slate-400">
-            <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 text-blue-600" />
-            <p className="text-xs">Đang tải danh sách bài đăng...</p>
-          </div>
-        ) : filteredPosts.length === 0 ? (
-          <div className="p-12 text-center">
-            <Share2 className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-            <h4 className="text-sm font-bold text-slate-800">Chưa có bài đăng đồng loạt nào</h4>
-            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-              Bấm vào nút "Tạo Bài Đăng Đồng Loạt" để soạn bài viết và đăng đồng thời lên Nhật ký Zalo của các nhân viên.
-            </p>
+        {/* Global Action Button for Sale Broadcast Tab */}
+        {activeTab === 'personal' && (
+          <div className="flex items-center gap-2.5 shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadData}
+              className="gap-1.5 border-slate-300 dark:border-[#1e2c47] bg-white dark:bg-[#090e1c] text-slate-700 dark:text-slate-300"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              <span>Làm mới</span>
+            </Button>
+
             <Button
               size="sm"
               onClick={() => setIsModalOpen(true)}
-              className="mt-4 bg-blue-600 hover:bg-blue-700 text-white text-xs gap-1.5"
+              className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white gap-1.5 shadow-md shadow-red-600/20 font-bold"
             >
-              <Plus className="h-3.5 w-3.5" />
-              <span>Soạn Bài Đăng Đầu Tiên</span>
+              <Plus className="h-4 w-4" />
+              <span>Tạo Bài Đăng Đồng Loạt</span>
             </Button>
           </div>
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {filteredPosts.map((post) => {
-              const isScheduledPost = post.status === 'SCHEDULED';
-              return (
-                <div key={post.id} className="p-5 hover:bg-slate-50/60 transition-colors">
-                  <div className="flex flex-col lg:flex-row items-start justify-between gap-4">
-                    {/* Post Content Column */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${
-                            isScheduledPost
-                              ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                              : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                          }`}
-                        >
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block" />
-                          {isScheduledPost ? 'LÊN LỊCH ĐĂNG' : 'ĐÃ ĐĂNG ĐỒNG LOẠT'}
-                        </span>
-
-                        <span className="text-[11px] text-slate-400">
-                          {formatDate(post.publishedAt || post.createdAt)}
-                        </span>
-
-                        <span className="text-[11px] text-slate-500">
-                          Người tạo: <strong>{post.createdBy?.name || 'Quản trị viên'}</strong>
-                        </span>
-                      </div>
-
-                      <h4 className="text-base font-bold text-slate-900">{post.title}</h4>
-
-                      <p className="text-xs text-slate-700 mt-2 whitespace-pre-line leading-relaxed max-w-3xl">
-                        {post.content}
-                      </p>
-
-                      {post.linkUrl && (
-                        <div className="mt-2.5 inline-flex items-center gap-1.5 text-xs text-blue-600 hover:underline">
-                          <LinkIcon className="h-3.5 w-3.5" />
-                          <a href={post.linkUrl} target="_blank" rel="noreferrer" className="truncate max-w-md">
-                            {post.linkUrl}
-                          </a>
-                        </div>
-                      )}
-
-                      {/* Attached Image Preview if any */}
-                      {post.imageUrl && (
-                        <div className="mt-3">
-                          <img
-                            src={post.imageUrl}
-                            alt={post.title}
-                            className="h-36 w-60 object-cover rounded-xl border border-slate-200 shadow-2xs"
-                          />
-                        </div>
-                      )}
-
-                      {/* Targeted Accounts Summary */}
-                      <div className="mt-4 p-3 bg-slate-50 border border-slate-200/80 rounded-xl">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-[11px] font-bold text-slate-700">
-                            Đã đăng lên {post.successCount}/{post.totalTarget} tài khoản Zalo nhân viên:
-                          </span>
-                          <span className="text-[10px] text-emerald-700 font-semibold">
-                            ✓ Hoàn tất 100%
-                          </span>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2">
-                          {post.targets.map((t) => (
-                            <div
-                              key={t.id}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs shadow-2xs"
-                            >
-                              <img
-                                src={t.user.avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sale'}
-                                alt={t.user.name}
-                                className="h-4 w-4 rounded-full border border-slate-200 object-cover"
-                              />
-                              <span className="font-semibold text-slate-800 text-[11px]">{t.user.name}</span>
-                              <span className="text-[10px] text-slate-400">({t.user.code})</span>
-                              <span className="text-[10px] text-emerald-600 font-bold ml-0.5">✓</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Post Actions & Metrics */}
-                    <div className="flex flex-row lg:flex-col items-end gap-2 shrink-0">
-                      <div className="flex items-center gap-3 text-xs text-slate-500 bg-slate-50 p-2 rounded-xl border border-slate-200 mb-2">
-                        <span className="flex items-center gap-1 text-rose-600 font-semibold">
-                          <ThumbsUp className="h-3.5 w-3.5" />
-                          {post.targets.reduce((acc, t) => acc + (t.likesCount || 0), 0)} thích
-                        </span>
-                        <span className="flex items-center gap-1 text-blue-600 font-semibold">
-                          <MessageCircle className="h-3.5 w-3.5" />
-                          {post.targets.reduce((acc, t) => acc + (t.commentsCount || 0), 0)} bình luận
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedPost(post)}
-                          className="h-8 text-xs gap-1"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                          <span>Chi tiết</span>
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeletePost(post.id)}
-                          className="h-8 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         )}
-      </Card>
+      </div>
+
+      {/* Modern High-Contrast Tab Switcher */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 bg-slate-100 dark:bg-[#070b16] p-1.5 rounded-2xl border border-slate-200 dark:border-[#162035]">
+        <button
+          onClick={() => handleSwitchTab('personal')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+            activeTab === 'personal'
+              ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md shadow-red-600/25'
+              : 'text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#121c32]'
+          }`}
+        >
+          <Users className="h-4 w-4" />
+          <span>📱 Đăng Bài Sale Cá Nhân (Đồng Loạt)</span>
+          <span
+            className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+              activeTab === 'personal'
+                ? 'bg-white/20 text-white'
+                : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+            }`}
+          >
+            {posts.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => handleSwitchTab('oa')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+            activeTab === 'oa'
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/25'
+              : 'text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#121c32]'
+          }`}
+        >
+          <Building2 className="h-4 w-4" />
+          <span>🏢 Đăng Bài Zalo OA (Hẹn Giờ & Tự Động)</span>
+          <span
+            className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+              activeTab === 'oa'
+                ? 'bg-white/20 text-white'
+                : 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300'
+            }`}
+          >
+            OA
+          </span>
+        </button>
+
+        <button
+          onClick={() => handleSwitchTab('tour')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+            activeTab === 'tour'
+              ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md shadow-amber-500/25'
+              : 'text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#121c32]'
+          }`}
+        >
+          <FileSpreadsheet className="h-4 w-4" />
+          <span>📅 Kế Hoạch Tour & Ảnh Drive (TourLuk)</span>
+          <span
+            className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+              activeTab === 'tour'
+                ? 'bg-white/20 text-white'
+                : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
+            }`}
+          >
+            Drive
+          </span>
+        </button>
+
+        <button
+          onClick={() => handleSwitchTab('workflow')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+            activeTab === 'workflow'
+              ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/25'
+              : 'text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#121c32]'
+          }`}
+        >
+          <ScrollText className="h-4 w-4" />
+          <span>✍️ Quy Trình Soạn & Duyệt Bài Viết</span>
+          <span
+            className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+              activeTab === 'workflow'
+                ? 'bg-white/20 text-white'
+                : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
+            }`}
+          >
+            Duyệt
+          </span>
+        </button>
+      </div>
+
+      {/* TAB 1: PERSONAL SALE BROADCAST */}
+      {activeTab === 'personal' && (
+        <div className="space-y-6">
+          {/* Stats Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="p-4 bg-white dark:bg-[#0d1527] border-slate-200 dark:border-[#1e2c47] shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                  <Share2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Chiến Dịch Đã Đăng</p>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">{totalPublishedPosts} bài viết</h3>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 bg-white dark:bg-[#0d1527] border-slate-200 dark:border-[#1e2c47] shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <Users className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Tài Khoản Zalo Sẵn Sàng</p>
+                  <h3 className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{activeAccountsCount} tài khoản</h3>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 bg-white dark:bg-[#0d1527] border-slate-200 dark:border-[#1e2c47] shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Lượt Đăng Lên Zalo</p>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">{totalAccountPublications} lượt đăng</h3>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 bg-white dark:bg-[#0d1527] border-slate-200 dark:border-[#1e2c47] shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                  <ThumbsUp className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Lượt Tương Tác Nhật Ký</p>
+                  <h3 className="text-xl font-bold text-rose-600 dark:text-rose-400 mt-0.5">{totalSimulatedLikes} tương tác</h3>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Main Posts Feed / List */}
+          <Card className="bg-white dark:bg-[#0d1527] border-slate-200 dark:border-[#1e2c47] overflow-hidden shadow-xs">
+            <div className="p-4 border-b border-slate-100 dark:border-[#1e2c47] flex flex-col sm:flex-row items-center justify-between gap-3">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                Danh Sách Bài Đăng Đồng Loạt ({filteredPosts.length})
+              </h3>
+
+              <div className="w-full sm:w-72">
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm bài đăng theo tiêu đề, nội dung..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-[#080d19] border border-slate-200 dark:border-[#1e2c47] rounded-lg focus:ring-1 focus:ring-blue-500 text-slate-900 dark:text-white transition-all"
+                />
+              </div>
+            </div>
+
+            {isLoading ? (
+              <div className="p-12 text-center text-slate-400">
+                <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 text-blue-600" />
+                <p className="text-xs">Đang tải danh sách bài đăng...</p>
+              </div>
+            ) : filteredPosts.length === 0 ? (
+              <div className="p-12 text-center">
+                <Share2 className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Chưa có bài đăng đồng loạt nào</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+                  Bấm vào nút &quot;Tạo Bài Đăng Đồng Loạt&quot; để soạn bài viết và đăng đồng thời lên Nhật ký Zalo của các nhân viên.
+                </p>
+                <Button
+                  size="sm"
+                  onClick={() => setIsModalOpen(true)}
+                  className="mt-4 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-xs gap-1.5 font-bold shadow-md shadow-red-600/20"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Soạn Bài Đăng Đầu Tiên</span>
+                </Button>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100 dark:divide-[#16223b]">
+                {filteredPosts.map((post) => {
+                  const isScheduledPost = post.status === 'SCHEDULED';
+                  return (
+                    <div key={post.id} className="p-5 hover:bg-slate-50/60 dark:hover:bg-[#111c34]/50 transition-colors">
+                      <div className="flex flex-col lg:flex-row items-start justify-between gap-4">
+                        {/* Post Content Column */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${
+                                isScheduledPost
+                                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50'
+                                  : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50'
+                              }`}
+                            >
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block" />
+                              {isScheduledPost ? 'LÊN LỊCH ĐĂNG' : 'ĐÃ ĐĂNG ĐỒNG LOẠT'}
+                            </span>
+
+                            <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                              {formatDate(post.publishedAt || post.createdAt)}
+                            </span>
+
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                              Người tạo: <strong className="text-slate-700 dark:text-slate-200">{post.createdBy?.name || 'Quản trị viên'}</strong>
+                            </span>
+                          </div>
+
+                          <h4 className="text-base font-bold text-slate-900 dark:text-white">{post.title}</h4>
+
+                          <p className="text-xs text-slate-700 dark:text-slate-300 mt-2 whitespace-pre-line leading-relaxed max-w-3xl">
+                            {post.content}
+                          </p>
+
+                          {post.linkUrl && (
+                            <div className="mt-2.5 inline-flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                              <LinkIcon className="h-3.5 w-3.5" />
+                              <a href={post.linkUrl} target="_blank" rel="noreferrer" className="truncate max-w-md">
+                                {post.linkUrl}
+                              </a>
+                            </div>
+                          )}
+
+                          {/* Attached Image Preview if any */}
+                          {post.imageUrl && (
+                            <div className="mt-3">
+                              <img
+                                src={post.imageUrl}
+                                alt={post.title}
+                                className="h-36 w-60 object-cover rounded-xl border border-slate-200 dark:border-[#1e2c47] shadow-2xs"
+                              />
+                            </div>
+                          )}
+
+                          {/* Targeted Accounts Summary */}
+                          <div className="mt-4 p-3 bg-slate-50 dark:bg-[#080d19] border border-slate-200/80 dark:border-[#1e2c47] rounded-xl">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                                Đã đăng lên {post.successCount}/{post.totalTarget} tài khoản Zalo nhân viên:
+                              </span>
+                              <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">
+                                ✓ Hoàn tất 100%
+                              </span>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2">
+                              {post.targets.map((t) => (
+                                <div
+                                  key={t.id}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white dark:bg-[#121c32] border border-slate-200 dark:border-[#223354] rounded-lg text-xs shadow-2xs"
+                                >
+                                  <img
+                                    src={t.user.avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sale'}
+                                    alt={t.user.name}
+                                    className="h-4 w-4 rounded-full border border-slate-200 dark:border-slate-700 object-cover"
+                                  />
+                                  <span className="font-semibold text-slate-800 dark:text-slate-200 text-[11px]">{t.user.name}</span>
+                                  <span className="text-[10px] text-slate-400">({t.user.code})</span>
+                                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold ml-0.5">✓</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Post Actions & Metrics */}
+                        <div className="flex flex-row lg:flex-col items-end gap-2 shrink-0">
+                          <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-[#080d19] p-2 rounded-xl border border-slate-200 dark:border-[#1e2c47] mb-2">
+                            <span className="flex items-center gap-1 text-rose-600 dark:text-rose-400 font-semibold">
+                              <ThumbsUp className="h-3.5 w-3.5" />
+                              {post.targets.reduce((acc, t) => acc + (t.likesCount || 0), 0)} thích
+                            </span>
+                            <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400 font-semibold">
+                              <MessageCircle className="h-3.5 w-3.5" />
+                              {post.targets.reduce((acc, t) => acc + (t.commentsCount || 0), 0)} bình luận
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedPost(post)}
+                              className="h-8 text-xs gap-1 border-slate-300 dark:border-[#1e2c47] bg-white dark:bg-[#090e1c] text-slate-700 dark:text-slate-300"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              <span>Chi tiết</span>
+                            </Button>
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeletePost(post.id)}
+                              className="h-8 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/50 border-rose-200 dark:border-rose-900/40"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
+
+      {/* TAB 2: ZALO OA POSTS MANAGER */}
+      {activeTab === 'oa' && <ZaloOaPostsManager />}
+
+      {/* TAB 3: TOUR CONTENT & GOOGLE DRIVE MANAGER */}
+      {activeTab === 'tour' && <TourContentManager />}
+
+      {/* TAB 4: ARTICLE APPROVAL WORKFLOW */}
+      {activeTab === 'workflow' && <TourArticleWorkflow />}
 
       {/* CREATE & BROADCAST POST MODAL */}
       <Modal
@@ -861,40 +1011,40 @@ export default function PostsPage() {
           maxWidth="2xl"
         >
           <div className="space-y-4 text-xs">
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <h5 className="font-bold text-slate-700 mb-1">Nội dung bài viết:</h5>
-              <p className="whitespace-pre-line text-slate-800 leading-relaxed">{selectedPost.content}</p>
+            <div className="p-3 bg-slate-50 dark:bg-[#080d19] rounded-xl border border-slate-200 dark:border-[#1e2c47]">
+              <h5 className="font-bold text-slate-700 dark:text-slate-300 mb-1">Nội dung bài viết:</h5>
+              <p className="whitespace-pre-line text-slate-800 dark:text-slate-200 leading-relaxed">{selectedPost.content}</p>
             </div>
 
             {selectedPost.imageUrl && (
               <div>
-                <h5 className="font-bold text-slate-700 mb-1">Hình ảnh đính kèm:</h5>
+                <h5 className="font-bold text-slate-700 dark:text-slate-300 mb-1">Hình ảnh đính kèm:</h5>
                 <img
                   src={selectedPost.imageUrl}
                   alt={selectedPost.title}
-                  className="h-44 w-auto rounded-xl border border-slate-200 object-cover"
+                  className="h-44 w-auto rounded-xl border border-slate-200 dark:border-[#1e2c47] object-cover"
                 />
               </div>
             )}
 
             <div>
-              <h5 className="font-bold text-slate-700 mb-2">
+              <h5 className="font-bold text-slate-700 dark:text-slate-300 mb-2">
                 Danh sách tài khoản đã đăng ({selectedPost.targets.length}):
               </h5>
               <div className="space-y-1.5 max-h-56 overflow-y-auto">
                 {selectedPost.targets.map((t) => (
                   <div
                     key={t.id}
-                    className="flex items-center justify-between p-2.5 bg-white border border-slate-200 rounded-xl"
+                    className="flex items-center justify-between p-2.5 bg-white dark:bg-[#0d1527] border border-slate-200 dark:border-[#1e2c47] rounded-xl"
                   >
                     <div className="flex items-center gap-2.5">
                       <img
                         src={t.user.avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sale'}
                         alt={t.user.name}
-                        className="h-8 w-8 rounded-full border border-slate-200 object-cover"
+                        className="h-8 w-8 rounded-full border border-slate-200 dark:border-slate-700 object-cover"
                       />
                       <div>
-                        <p className="font-bold text-slate-800">{t.user.name}</p>
+                        <p className="font-bold text-slate-800 dark:text-slate-200">{t.user.name}</p>
                         <p className="text-[10px] text-slate-400">
                           {t.user.code} • SĐT: {t.user.phone}
                         </p>
@@ -903,11 +1053,11 @@ export default function PostsPage() {
 
                     <div className="flex items-center gap-3">
                       <div className="text-right text-[11px]">
-                        <span className="text-rose-600 font-bold">{t.likesCount} thích</span> •{' '}
-                        <span className="text-blue-600 font-bold">{t.commentsCount} bình luận</span>
+                        <span className="text-rose-600 dark:text-rose-400 font-bold">{t.likesCount} thích</span> •{' '}
+                        <span className="text-blue-600 dark:text-blue-400 font-bold">{t.commentsCount} bình luận</span>
                       </div>
 
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 px-2 py-0.5 rounded-full flex items-center gap-1">
                         ✓ Thành công
                       </span>
                     </div>
@@ -916,8 +1066,8 @@ export default function PostsPage() {
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-200 flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={() => setSelectedPost(null)}>
+            <div className="pt-3 border-t border-slate-200 dark:border-[#1e2c47] flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setSelectedPost(null)} className="border-slate-300 dark:border-[#1e2c47] bg-white dark:bg-[#090e1c] text-slate-700 dark:text-slate-300">
                 Đóng
               </Button>
             </div>

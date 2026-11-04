@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   Body,
   Query,
@@ -85,5 +86,24 @@ export class CustomersController {
     @CurrentUser() currentUser: any,
   ) {
     return this.customersService.update(id, dto, currentUser);
+  }
+
+  @Post('bulk-delete')
+  @ApiOperation({ summary: 'Xóa nhiều khách hàng cùng lúc' })
+  async bulkDelete(
+    @Body() body: { ids: string[]; permanent?: boolean },
+    @CurrentUser() currentUser: any,
+  ) {
+    return this.customersService.bulkDelete(body.ids, body.permanent, currentUser);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Xóa một khách hàng' })
+  async remove(
+    @Param('id') id: string,
+    @Query('permanent') permanent: string,
+    @CurrentUser() currentUser: any,
+  ) {
+    return this.customersService.remove(id, permanent === 'true', currentUser);
   }
 }

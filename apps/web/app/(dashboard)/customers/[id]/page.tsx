@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   User,
@@ -22,6 +22,8 @@ import {
   Check,
   RefreshCw,
   Send,
+  Edit3,
+  Trash2,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,10 +43,12 @@ import {
 
 export default function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const [customer, setCustomer] = useState<any>(null);
   const [sales, setSales] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'activities' | 'conversations' | 'tasks' | 'attachments' | 'assignments'>('overview');
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Modal Handover
   const [isHandoverOpen, setIsHandoverOpen] = useState(false);
@@ -64,6 +68,75 @@ export default function CustomerDetailPage() {
     description: '',
     dueDate: '',
   });
+
+  // Edit Profile Form
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    fullName: '',
+    phone: '',
+    email: '',
+    source: '',
+    status: CustomerStatus.NEW,
+    priority: CustomerPriority.MEDIUM,
+    assignedToId: '',
+    notes: '',
+  });
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  const openEditModal = () => {
+    if (!customer) return;
+    setEditFormData({
+      fullName: customer.fullName || '',
+      phone: customer.phone || '',
+      email: customer.email || '',
+      source: customer.source || 'ZALO',
+      status: customer.status || CustomerStatus.NEW,
+      priority: customer.priority || CustomerPriority.MEDIUM,
+      assignedToId: customer.assignedToId || '',
+      notes: customer.notes || '',
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingEdit(true);
+    try {
+      await fetchApi(`/customers/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          fullName: editFormData.fullName.trim(),
+          phone: editFormData.phone.trim() || '',
+          email: editFormData.email.trim() || '',
+          source: editFormData.source,
+          status: editFormData.status,
+          priority: editFormData.priority,
+          assignedToId: editFormData.assignedToId || undefined,
+          notes: editFormData.notes.trim() || '',
+        }),
+      });
+      setIsEditModalOpen(false);
+      loadCustomer();
+    } catch (err: any) {
+      alert(`Lỗi lưu thông tin: ${err.message}`);
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
+  const handleDeleteCustomer = async () => {
+    if (!customer) return;
+    const confirmed = window.confirm(`Bạn có chắc chắn muốn xóa khách hàng "${customer.fullName}" (${customer.code})?`);
+    if (!confirmed) return;
+    setIsDeleting(true);
+    try {
+      await fetchApi(`/customers/${id}?permanent=true`, { method: 'DELETE' });
+      router.push('/customers');
+    } catch (err: any) {
+      alert(`Lỗi xóa khách hàng: ${err.message}`);
+      setIsDeleting(false);
+    }
+  };
 
   const loadCustomer = async () => {
     setIsLoading(true);
@@ -186,6 +259,10 @@ export default function CustomerDetailPage() {
         </Link>
 
         <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={openEditModal} className="bg-blue-50/50 hover:bg-blue-100/60 text-blue-700 border-blue-200">
+            <Edit3 className="h-3.5 w-3.5 mr-1" />
+            <span>Chỉnh sửa hồ sơ</span>
+          </Button>
           <Button size="sm" variant="outline" onClick={() => setIsHandoverOpen(true)}>
             <Share2 className="h-3.5 w-3.5 text-blue-600" />
             <span>Bàn giao khách hàng này</span>
@@ -668,6 +745,189 @@ export default function CustomerDetailPage() {
           <div className="flex items-center justify-end gap-2 pt-2">
             <Button type="button" variant="ghost" onClick={() => setIsTaskModalOpen(false)}>Hủy</Button>
             <Button type="submit">Tạo nhiệm vụ</Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal: Chỉnh Sửa Hồ Sơ Khách Hàng */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title={customer ? `Chỉnh Sửa Hồ Sơ - ${customer.code}` : 'Chỉnh sửa hồ sơ khách hàng'}
+        description="Chỉnh sửa, thêm mới hoặc xóa bớt thông tin (họ tên, số điện thoại, email, ghi chú...)"
+      >
+        <form onSubmit={handleSaveEdit} className="space-y-4">
+          <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+            <div>
+              <span className="text-slate-400">Mã khách hàng:</span>{' '}
+              <strong className="text-slate-800 font-bold">{customer?.code}</strong>
+            </div>
+            <div>
+              <span className="text-slate-400">Nguồn:</span>{' '}
+              <span className="px-2 py-0.5 rounded-full font-semibold bg-blue-100 text-blue-700">
+                {customer?.source}
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Họ và tên khách hàng <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              value={editFormData.fullName}
+              onChange={(e) => setEditFormData({ ...editFormData, fullName: e.target.value })}
+              placeholder="VD: Mai Anh"
+              className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-slate-700">Số điện thoại</label>
+                {editFormData.phone && (
+                  <button
+                    type="button"
+                    onClick={() => setEditFormData({ ...editFormData, phone: '' })}
+                    className="text-[11px] text-red-500 hover:underline"
+                  >
+                    Xóa số
+                  </button>
+                )}
+              </div>
+              <input
+                type="text"
+                value={editFormData.phone}
+                onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                placeholder="Để trống nếu chưa có SĐT"
+                className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <p className="text-[10px] text-slate-400 mt-0.5">* Có thể nhập mới hoặc xóa trắng</p>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-slate-700">Email</label>
+                {editFormData.email && (
+                  <button
+                    type="button"
+                    onClick={() => setEditFormData({ ...editFormData, email: '' })}
+                    className="text-[11px] text-red-500 hover:underline"
+                  >
+                    Xóa email
+                  </button>
+                )}
+              </div>
+              <input
+                type="email"
+                value={editFormData.email}
+                onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                placeholder="Để trống nếu chưa có email"
+                className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Trạng thái</label>
+              <select
+                value={editFormData.status}
+                onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value as any })}
+                className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl"
+              >
+                {Object.entries(CustomerStatusLabels).map(([k, v]) => (
+                  <option key={k} value={k}>{v}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Ưu tiên</label>
+              <select
+                value={editFormData.priority}
+                onChange={(e) => setEditFormData({ ...editFormData, priority: e.target.value as any })}
+                className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl"
+              >
+                {Object.entries(CustomerPriorityLabels).map(([k, v]) => (
+                  <option key={k} value={k}>{v}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Sale phụ trách</label>
+              <select
+                value={editFormData.assignedToId}
+                onChange={(e) => setEditFormData({ ...editFormData, assignedToId: e.target.value })}
+                className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl"
+              >
+                <option value="">Chưa phân công</option>
+                {sales.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-semibold text-slate-700">Ghi chú nhu cầu tư vấn</label>
+              {editFormData.notes && (
+                <button
+                  type="button"
+                  onClick={() => setEditFormData({ ...editFormData, notes: '' })}
+                  className="text-[11px] text-red-500 hover:underline"
+                >
+                  Xóa ghi chú
+                </button>
+              )}
+            </div>
+            <textarea
+              rows={3}
+              value={editFormData.notes}
+              onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
+              placeholder="VD: Khách đi tour Sydney 2 người vào tháng 12..."
+              className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="ghost"
+              className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 text-xs flex items-center gap-1.5 px-2.5"
+              onClick={() => {
+                setIsEditModalOpen(false);
+                handleDeleteCustomer();
+              }}
+              disabled={isDeleting}
+            >
+              <Trash2 className="h-4 w-4" />
+              <span>Xóa khách hàng này</span>
+            </Button>
+
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="ghost" onClick={() => setIsEditModalOpen(false)}>
+                Hủy
+              </Button>
+              <Button type="submit" disabled={isSavingEdit}>
+                {isSavingEdit ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin mr-1" />
+                    <span>Đang lưu...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-4 w-4 mr-1" />
+                    <span>Lưu thay đổi</span>
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </form>
       </Modal>

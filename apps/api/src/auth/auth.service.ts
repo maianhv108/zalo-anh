@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcryptjs';
-import { AuditAction } from '@prisma/client';
+import { AuditAction, UserRole } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +20,12 @@ export class AuthService {
 
     if (!user) {
       throw new UnauthorizedException('Email hoặc mật khẩu không chính xác.');
+    }
+
+    if (user.role !== UserRole.ADMIN) {
+      throw new UnauthorizedException(
+        'Chỉ có tài khoản Quản trị viên (Admin) mới có quyền đăng nhập vào hệ thống Webapp Quản trị.',
+      );
     }
 
     if (user.status === 'INACTIVE') {

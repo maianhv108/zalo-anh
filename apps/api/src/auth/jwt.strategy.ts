@@ -3,6 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { UserRole } from '@prisma/client';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -25,6 +26,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     if (!user || user.status === 'INACTIVE') {
       throw new UnauthorizedException('Tài khoản không tồn tại hoặc đã bị vô hiệu hóa.');
+    }
+
+    if (user.role === UserRole.SALE) {
+      throw new UnauthorizedException('Nhân viên Sale không có quyền truy cập hệ thống quản trị CRM.');
     }
 
     return {

@@ -186,6 +186,7 @@ model User {
   usedInvites       SaleInvite[]         @relation("UsedInvites")
   createdBroadcastPosts  ZaloBroadcastPost[]  @relation("CreatedBroadcastPosts")
   targetedBroadcastPosts ZaloPostTarget[]     @relation("TargetedBroadcastPosts")
+  createdOaPosts         ZaloOaPost[]         @relation("CreatedOaPosts")
 }
 
 model SalesTeam {
@@ -519,5 +520,31 @@ model ZaloPostTarget {
 
   @@index([postId])
   @@index([userId])
+}
+
+model ZaloOaPost {
+  id            String         @id @default(cuid())
+  title         String
+  excerpt       String?
+  content       String
+  coverUrl      String?
+  category      String?        @default("TOUR")
+  author        String         @default("TourLuk Travel Official")
+  status        ZaloPostStatus @default(DRAFT)
+  scheduledAt   DateTime?
+  publishedAt   DateTime?
+  isAiGenerated Boolean        @default(false)
+  aiPrompt      String?
+  viewsCount    Int            @default(0)
+  sharesCount   Int            @default(0)
+  likesCount    Int            @default(0)
+  createdById   String
+  createdBy     User           @relation("CreatedOaPosts", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([status])
+  @@index([createdById])
+  @@index([scheduledAt])
 }
 

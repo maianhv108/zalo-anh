@@ -45,21 +45,21 @@ export function Modal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-sm animate-fade-in">
       <div
         className={cn(
-          'w-full bg-[#0d1527] rounded-2xl shadow-2xl border border-[#1a2842] overflow-hidden flex flex-col max-h-[90vh] text-slate-100',
+          'w-full bg-white dark:bg-[#0d1527] rounded-2xl shadow-2xl border border-slate-200 dark:border-[#1a2842] overflow-hidden flex flex-col max-h-[90vh] text-slate-800 dark:text-slate-100 transition-colors',
           maxWidths[maxWidth],
         )}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#162035] bg-[#0a101f]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-[#162035] bg-slate-50 dark:bg-[#0a101f]">
           <div>
-            <h3 className="text-lg font-semibold text-slate-100">{title}</h3>
-            {description && <p className="text-sm text-slate-400 mt-0.5">{description}</p>}
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
+            {description && <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{description}</p>}
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:text-white dark:hover:bg-slate-800 transition-colors"
           >
             <X className="h-5 w-5" />
           </button>

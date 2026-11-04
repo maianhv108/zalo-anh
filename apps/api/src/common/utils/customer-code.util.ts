@@ -1,11 +1,19 @@
 /**
  * Utility để sinh mã khách hàng tự động theo quy tắc:
- * Tiền tố = Viết tắt tên Nhân viên Sale phụ trách (VD: "Tiểu Nhã" -> "TN", "Mai Anh" -> "MA")
- * Số thứ tự = 4 chữ số tăng dần cho từng nhân viên (VD: TN0001, TN0002, MA0001, MA0002)
- * Trường hợp khách chưa gán Sale: Tiền tố mặc định là "KH" (VD: KH0001, KH0002)
+ * 1. Khách hàng từ Zalo OA: Tiền tố luôn là "OA" (VD: OA0001, OA0002, OA0003...)
+ * 2. Khách hàng do Sale phụ trách: Tiền tố = Viết tắt tên Nhân viên Sale (VD: "Tiểu Nhã" -> "TN0001", "Mai Anh" -> "MA0001")
+ * 3. Khách hàng vãng lai chưa gán Sale: Tiền tố mặc định là "KH" (VD: KH0001, KH0002)
  */
 
-export function getSaleCodePrefix(saleName?: string | null): string {
+export function getSaleCodePrefix(saleName?: string | null, source?: string | null): string {
+  // Nếu nguồn khách là Zalo OA hoặc saleName là OA -> Mã khách hàng luôn là OA...
+  if (
+    (source && source.toUpperCase().includes('OA')) ||
+    (saleName && saleName.trim().toUpperCase() === 'OA')
+  ) {
+    return 'OA';
+  }
+
   if (!saleName || !saleName.trim()) {
     return 'KH';
   }
@@ -36,8 +44,9 @@ export function getSaleCodePrefix(saleName?: string | null): string {
 export async function generateCustomerCode(
   prismaOrTx: any,
   saleName?: string | null,
+  source?: string | null,
 ): Promise<string> {
-  const prefix = getSaleCodePrefix(saleName);
+  const prefix = getSaleCodePrefix(saleName, source);
 
   // Tìm tất cả các mã khách hàng bắt đầu bằng tiền tố này
   const existingCustomers = await prismaOrTx.customer.findMany({

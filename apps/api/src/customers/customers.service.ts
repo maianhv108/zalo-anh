@@ -171,7 +171,7 @@ export class CustomersService {
       assignedSaleName = assignedSale?.name || null;
     }
 
-    const code = await generateCustomerCode(this.prisma, assignedSaleName);
+    const code = await generateCustomerCode(this.prisma, assignedSaleName, dto.source);
 
     const customer = await this.prisma.customer.create({
       data: {
@@ -228,6 +228,15 @@ export class CustomersService {
     }
 
     const data: any = { ...dto };
+    if (dto.phone !== undefined) {
+      data.phone = dto.phone && String(dto.phone).trim() ? String(dto.phone).trim() : null;
+    }
+    if (dto.email !== undefined) {
+      data.email = dto.email && String(dto.email).trim() ? String(dto.email).trim() : null;
+    }
+    if (dto.notes !== undefined) {
+      data.notes = dto.notes && String(dto.notes).trim() ? String(dto.notes).trim() : null;
+    }
     if (dto.tags) {
       data.tags = JSON.stringify(dto.tags);
     }
@@ -331,5 +340,97 @@ export class CustomersService {
 
     const csvContent = [header.join(','), ...rows.map((r) => r.join(','))].join('\n');
     return csvContent;
+  }
+
+  async remove(id: string, permanent: boolean = false, currentUser: any) {
+    const customer = await this.prisma.customer.findUnique({
+      where: { id },
+    });
+
+    if (!customer) {
+      throw new NotFoundException('Không tìm thấy thông tin khách hàng.');
+    }
+
+    if (currentUser.role === UserRole.SALE && customer.assignedToId !== currentUser.id) {
+      throw new ForbiddenException('Bạn không có quyền xóa khách hàng này.');
+    }
+
+    if (permanent && currentUser.role === UserRole.ADMIN) {
+      await this.prisma.customer.delete({ where: { id } });
+    } else {
+      await this.prisma.customer.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      });
+    }
+
+    await this.prisma.auditLog.create({
+      data: {
+        userId: currentUser.id,
+        action: AuditAction.UPDATE_CUSTOMER,
+        resource: 'CUSTOMER',
+        resourceId: id,
+        details: JSON.stringify({
+          action: permanent ? 'HARD_DELETE' : 'SOFT_DELETE',
+          code: customer.code,
+          fullName: customer.fullName,
+        }),
+      },
+    });
+
+    return { success: true, id, message: 'Đã xóa khách hàng thành công.' };
+  }
+
+  async bulkDelete(ids: string[], permanent: boolean = false, currentUser: any) {
+    if (!ids || ids.length === 0) {
+      throw new BadRequestException('Danh sách khách hàng cần xóa không hợp lệ.');
+    }
+
+    const where: any = { id: { in: ids } };
+    if (currentUser.role === UserRole.SALE) {
+      where.assignedToId = currentUser.id;
+    }
+
+    const customersToDelete = await this.prisma.customer.findMany({
+      where,
+      select: { id: true, code: true, fullName: true },
+    });
+
+    if (customersToDelete.length === 0) {
+      throw new NotFoundException('Không tìm thấy khách hàng phù hợp để xóa.');
+    }
+
+    const matchedIds = customersToDelete.map((c) => c.id);
+
+    if (permanent && currentUser.role === UserRole.ADMIN) {
+      await this.prisma.customer.deleteMany({
+        where: { id: { in: matchedIds } },
+      });
+    } else {
+      await this.prisma.customer.updateMany({
+        where: { id: { in: matchedIds } },
+        data: { deletedAt: new Date() },
+      });
+    }
+
+    await this.prisma.auditLog.create({
+      data: {
+        userId: currentUser.id,
+        action: AuditAction.UPDATE_CUSTOMER,
+        resource: 'CUSTOMER',
+        details: JSON.stringify({
+          action: permanent ? 'BULK_HARD_DELETE' : 'BULK_SOFT_DELETE',
+          count: matchedIds.length,
+          customers: customersToDelete,
+        }),
+      },
+    });
+
+    return {
+      success: true,
+      count: matchedIds.length,
+      deletedIds: matchedIds,
+      message: `Đã xóa thành công ${matchedIds.length} khách hàng.`,
+    };
   }
 }

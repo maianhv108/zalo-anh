@@ -34,11 +34,11 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen bg-[#090d16] text-slate-100 overflow-hidden">
+    <div className="flex h-screen bg-slate-50 text-slate-900 dark:bg-[#090d16] dark:text-slate-100 overflow-hidden transition-colors">
       <Sidebar />
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Topbar />
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8 bg-[#090d16]">
+        <main className="flex-1 overflow-y-auto p-6 lg:p-8 bg-slate-100/70 dark:bg-[#090d16] transition-colors">
           {children}
         </main>
       </div>

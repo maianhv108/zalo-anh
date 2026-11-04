@@ -19,6 +19,16 @@ export class ExtensionSyncMessageDto {
   @IsOptional()
   @IsString()
   msgId?: string;
+
+  @ApiPropertyOptional({ description: 'Dữ liệu ảnh base64 đính kèm (nếu có)' })
+  @IsOptional()
+  @IsString()
+  imageBase64?: string;
+
+  @ApiPropertyOptional({ description: 'URL trực tiếp của ảnh Zalo CDN' })
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
 }
 
 export class ExtensionSyncCustomerDto {
@@ -59,4 +69,13 @@ export class ExtensionSyncConversationDto {
   @ValidateNested({ each: true })
   @Type(() => ExtensionSyncMessageDto)
   messages: ExtensionSyncMessageDto[];
+
+  @ApiPropertyOptional({ example: 'ZALO_OA', description: 'Loại kênh: ZALO hoặc ZALO_OA' })
+  @IsOptional()
+  @IsString()
+  channelType?: string;
+
+  @ApiPropertyOptional({ description: 'Cờ đánh dấu đồng bộ từ Zalo OA' })
+  @IsOptional()
+  isOa?: boolean;
 }

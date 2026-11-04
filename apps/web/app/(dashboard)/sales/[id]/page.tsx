@@ -197,11 +197,17 @@ export default function SaleDetailPage() {
       <Card className="p-6">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <img
-              src={user?.avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sale'}
-              alt={user?.name}
-              className="h-16 w-16 rounded-2xl border-2 border-slate-200 object-cover bg-slate-100"
-            />
+            {user?.avatarUrl && !user.avatarUrl.includes('admin-avatar') && !user.avatarUrl.includes('dicebear') ? (
+              <img
+                src={user.avatarUrl}
+                alt={user?.name}
+                className="h-16 w-16 rounded-2xl border-2 border-slate-200 object-cover bg-slate-100 shadow-sm"
+              />
+            ) : (
+              <div className="h-16 w-16 rounded-2xl bg-gradient-to-tr from-indigo-600 to-rose-600 flex items-center justify-center font-bold text-2xl text-white shadow-sm">
+                {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              </div>
+            )}
             <div>
               <div className="flex items-center gap-2.5">
                 <h2 className="text-xl font-bold text-slate-900">{user?.name}</h2>

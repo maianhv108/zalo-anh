@@ -19,6 +19,8 @@ import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { SaleInvitesModule } from './sale-invites/sale-invites.module';
 import { ZaloPostsModule } from './zalo-posts/zalo-posts.module';
+import { ZaloOaPostsModule } from './zalo-oa-posts/zalo-oa-posts.module';
+import { TourContentModule } from './tour-content/tour-content.module';
 
 @Module({
   imports: [
@@ -42,6 +44,8 @@ import { ZaloPostsModule } from './zalo-posts/zalo-posts.module';
     NotificationsModule,
     SaleInvitesModule,
     ZaloPostsModule,
+    ZaloOaPostsModule,
+    TourContentModule,
   ],
 })
 export class AppModule {}

@@ -12,14 +12,15 @@ export class ConversationsController {
   constructor(private conversationsService: ConversationsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Lấy danh sách các cuộc hội thoại (Hỗ trợ lọc theo Sale, tìm kiếm)' })
+  @ApiOperation({ summary: 'Lấy danh sách các cuộc hội thoại (Hỗ trợ lọc theo Sale, kênh Zalo OA hoặc Zalo cá nhân, tìm kiếm)' })
   async findAll(
     @Query('salesUserId') salesUserId?: string,
+    @Query('channelType') channelType?: string,
     @Query('search') search?: string,
     @Query('isDemo') isDemo?: boolean,
     @CurrentUser() currentUser?: any,
   ) {
-    return this.conversationsService.findAll({ salesUserId, search, isDemo }, currentUser);
+    return this.conversationsService.findAll({ salesUserId, channelType, search, isDemo }, currentUser);
   }
 
   @Get(':id')

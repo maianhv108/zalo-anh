@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Put,
   Delete,
   Param,
   Body,
@@ -59,6 +60,7 @@ export class UsersController {
     return this.usersService.create(dto, currentUserId);
   }
 
+  @Put(':id')
   @Patch(':id')
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Cập nhật thông tin nhân viên' })

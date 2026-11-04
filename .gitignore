@@ -17,6 +17,11 @@ out/
 .env.production.local
 .env.*
 !.env.example
+secrets/
+*.json.key
+*service-account*.json
+*credentials*.json
+tool-zalo-tourluk*.json
 
 # Logs
 *.log
@@ -40,4 +45,10 @@ uploads/
 tmp/
 temp/
 *.zip
+
+# Runtime Data, Chrome Profiles & Scratch Scripts
+data/
+apps/api/data/profiles/
+apps/api/data/sales-storage/
+scratch/
 
