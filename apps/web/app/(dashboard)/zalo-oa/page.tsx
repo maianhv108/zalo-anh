@@ -34,13 +34,10 @@ import { Button } from '@/components/ui/button';
 import { fetchApi } from '@/lib/api';
 import { formatDate, formatShortDate } from '@/lib/utils';
 import { CustomerStatusLabels, CustomerStatusColors, CustomerStatus } from '@sales-zalo/shared';
-import { ZaloOaPostsManager } from '@/components/zalo-oa/zalo-oa-posts-manager';
-import { TourContentManager } from '@/components/zalo-oa/tour-content-manager';
-import { TourArticleWorkflow } from '@/components/zalo-oa/tour-article-workflow';
 
 export default function ZaloOaPage() {
   const [oaStatus, setOaStatus] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'ARTICLE_WORKFLOW' | 'TOUR_CONTENT' | 'INBOX' | 'CUSTOMERS' | 'POSTS' | 'INFO'>('ARTICLE_WORKFLOW');
+  const [activeTab, setActiveTab] = useState<'INBOX' | 'CUSTOMERS'>('INBOX');
   const [conversations, setConversations] = useState<any[]>([]);
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
@@ -106,10 +103,10 @@ export default function ZaloOaPage() {
 
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      if (params.get('tab') === 'posts') {
-        setActiveTab('POSTS');
-      } else if (params.get('tab') === 'tour' || params.get('tab') === 'TOUR_CONTENT') {
-        setActiveTab('TOUR_CONTENT');
+      if (params.get('tab') === 'customers') {
+        setActiveTab('CUSTOMERS');
+      } else {
+        setActiveTab('INBOX');
       }
     }
   }, []);
@@ -269,32 +266,10 @@ export default function ZaloOaPage() {
           {/* Quick Tabs */}
           <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-[#060a14] rounded-xl border border-slate-200 dark:border-[#162137] shadow-xs">
             <button
-              onClick={() => setActiveTab('ARTICLE_WORKFLOW')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                activeTab === 'ARTICLE_WORKFLOW'
-                  ? 'bg-gradient-to-r from-amber-500 via-pink-600 to-indigo-600 text-white shadow font-bold'
-                  : 'text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-800/50'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-500 dark:text-amber-300" />
-              <span>✍️ Duyệt Bài Viết Zalo OA</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('TOUR_CONTENT')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                activeTab === 'TOUR_CONTENT'
-                  ? 'bg-gradient-to-r from-amber-500 to-indigo-600 text-white shadow font-bold'
-                  : 'text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-800/50'
-              }`}
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
-              <span>Kế Hoạch Tour & Ảnh Drive</span>
-            </button>
-            <button
               onClick={() => setActiveTab('INBOX')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
                 activeTab === 'INBOX'
-                  ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow font-bold'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow font-bold'
                   : 'text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-800/50'
               }`}
             >
@@ -305,25 +280,22 @@ export default function ZaloOaPage() {
               onClick={() => setActiveTab('CUSTOMERS')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
                 activeTab === 'CUSTOMERS'
-                  ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow font-bold'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow font-bold'
                   : 'text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-800/50'
               }`}
             >
               <Users className="w-3.5 h-3.5" />
               <span>Khách Hàng OA ({customers.length})</span>
             </button>
-            <button
-              onClick={() => setActiveTab('POSTS')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                activeTab === 'POSTS'
-                  ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow font-bold'
-                  : 'text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-800/50'
-              }`}
-            >
-              <Share2 className="w-3.5 h-3.5 text-pink-500 dark:text-pink-400" />
-              <span>Đăng Bài & Hẹn Giờ OA</span>
-            </button>
           </div>
+
+          {/* Quick Link to Post Management Tab */}
+          <Link href="/posts?tab=workflow">
+            <Button className="bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-600 hover:to-rose-700 text-white font-bold text-xs h-9 px-3.5 shadow-md shadow-rose-600/20 border border-amber-400/30">
+              <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+              <span>✍️ Mở Tab Duyệt & Đăng Bài Tour</span>
+            </Button>
+          </Link>
 
           {/* Simulate Inbound Button */}
           <Button
@@ -771,21 +743,6 @@ export default function ZaloOaPage() {
           </div>
         </div>
       )}
-
-      {/* ========================================================================= */}
-      {/* 🚀 TAB 0: DUYỆT BÀI ĐĂNG ZALO OA (WORKFLOW: CHỜ DUYỆT / CHỜ DUYỆT LẠI / ĐÃ DUYỆT) */}
-      {/* ========================================================================= */}
-      {activeTab === 'ARTICLE_WORKFLOW' && <TourArticleWorkflow />}
-
-      {/* ========================================================================= */}
-      {/* 🚀 TAB 3: ĐĂNG BÀI TỰ ĐỘNG & HẸN GIỜ ZALO OA */}
-      {/* ========================================================================= */}
-      {activeTab === 'POSTS' && <ZaloOaPostsManager />}
-
-      {/* ========================================================================= */}
-      {/* 🚀 TAB 4: KẾ HOẠCH TOUR (GOOGLE SHEETS) & ĐỀ XUẤT ẢNH (GOOGLE DRIVE) */}
-      {/* ========================================================================= */}
-      {activeTab === 'TOUR_CONTENT' && <TourContentManager />}
     </div>
   );
 }

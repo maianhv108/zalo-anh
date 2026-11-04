@@ -103,10 +103,10 @@ const SAMPLE_IMAGES = [
   },
 ];
 
-export type PostTab = 'personal' | 'oa' | 'tour' | 'workflow';
+export type PostTab = 'workflow' | 'tour' | 'oa' | 'personal';
 
 export default function PostsPage() {
-  const [activeTab, setActiveTab] = useState<PostTab>('personal');
+  const [activeTab, setActiveTab] = useState<PostTab>('workflow');
   const [posts, setPosts] = useState<BroadcastPost[]>([]);
   const [availableAccounts, setAvailableAccounts] = useState<SaleAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -161,6 +161,8 @@ export default function PostsPage() {
         const tab = params.get('tab');
         if (tab === 'oa' || tab === 'tour' || tab === 'workflow' || tab === 'personal') {
           setActiveTab(tab as PostTab);
+        } else {
+          setActiveTab('workflow');
         }
       };
       handleUrlTab();
@@ -341,44 +343,23 @@ export default function PostsPage() {
       {/* Modern High-Contrast Tab Switcher */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 bg-slate-100 dark:bg-[#070b16] p-1.5 rounded-2xl border border-slate-200 dark:border-[#162035]">
         <button
-          onClick={() => handleSwitchTab('personal')}
+          onClick={() => handleSwitchTab('workflow')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-            activeTab === 'personal'
-              ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md shadow-red-600/25'
+            activeTab === 'workflow'
+              ? 'bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white shadow-md shadow-red-600/25'
               : 'text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#121c32]'
           }`}
         >
-          <Users className="h-4 w-4" />
-          <span>📱 Đăng Bài Sale Cá Nhân (Đồng Loạt)</span>
+          <ScrollText className="h-4 w-4" />
+          <span>✍️ Duyệt Bài Đăng Tour (Từ Sheet & Drive)</span>
           <span
             className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-              activeTab === 'personal'
+              activeTab === 'workflow'
                 ? 'bg-white/20 text-white'
-                : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300'
             }`}
           >
-            {posts.length}
-          </span>
-        </button>
-
-        <button
-          onClick={() => handleSwitchTab('oa')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-            activeTab === 'oa'
-              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/25'
-              : 'text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#121c32]'
-          }`}
-        >
-          <Building2 className="h-4 w-4" />
-          <span>🏢 Đăng Bài Zalo OA (Hẹn Giờ & Tự Động)</span>
-          <span
-            className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-              activeTab === 'oa'
-                ? 'bg-white/20 text-white'
-                : 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300'
-            }`}
-          >
-            OA
+            Chờ Duyệt
           </span>
         </button>
 
@@ -404,28 +385,58 @@ export default function PostsPage() {
         </button>
 
         <button
-          onClick={() => handleSwitchTab('workflow')}
+          onClick={() => handleSwitchTab('oa')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-            activeTab === 'workflow'
-              ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/25'
+            activeTab === 'oa'
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/25'
               : 'text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#121c32]'
           }`}
         >
-          <ScrollText className="h-4 w-4" />
-          <span>✍️ Quy Trình Soạn & Duyệt Bài Viết</span>
+          <Building2 className="h-4 w-4" />
+          <span>🏢 Soạn Bài & Hẹn Giờ Zalo OA</span>
           <span
             className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-              activeTab === 'workflow'
+              activeTab === 'oa'
                 ? 'bg-white/20 text-white'
-                : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
+                : 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300'
             }`}
           >
-            Duyệt
+            OA
+          </span>
+        </button>
+
+        <button
+          onClick={() => handleSwitchTab('personal')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+            activeTab === 'personal'
+              ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md shadow-indigo-600/25'
+              : 'text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#121c32]'
+          }`}
+        >
+          <Users className="h-4 w-4" />
+          <span>📱 Đăng Bài Sale Cá Nhân (Đồng Loạt)</span>
+          <span
+            className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+              activeTab === 'personal'
+                ? 'bg-white/20 text-white'
+                : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+            }`}
+          >
+            {posts.length}
           </span>
         </button>
       </div>
 
-      {/* TAB 1: PERSONAL SALE BROADCAST */}
+      {/* TAB 1: DUYỆT BÀI ĐĂNG TOUR (WORKFLOW: TỪ SHEET & DRIVE) */}
+      {activeTab === 'workflow' && <TourArticleWorkflow />}
+
+      {/* TAB 2: KẾ HOẠCH TOUR & GOOGLE DRIVE MANAGER */}
+      {activeTab === 'tour' && <TourContentManager />}
+
+      {/* TAB 3: SOẠN BÀI & HẸN GIỜ ZALO OA */}
+      {activeTab === 'oa' && <ZaloOaPostsManager />}
+
+      {/* TAB 4: PERSONAL SALE BROADCAST */}
       {activeTab === 'personal' && (
         <div className="space-y-6">
           {/* Stats Summary Cards */}
@@ -648,15 +659,6 @@ export default function PostsPage() {
           </Card>
         </div>
       )}
-
-      {/* TAB 2: ZALO OA POSTS MANAGER */}
-      {activeTab === 'oa' && <ZaloOaPostsManager />}
-
-      {/* TAB 3: TOUR CONTENT & GOOGLE DRIVE MANAGER */}
-      {activeTab === 'tour' && <TourContentManager />}
-
-      {/* TAB 4: ARTICLE APPROVAL WORKFLOW */}
-      {activeTab === 'workflow' && <TourArticleWorkflow />}
 
       {/* CREATE & BROADCAST POST MODAL */}
       <Modal

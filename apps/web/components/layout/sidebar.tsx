@@ -55,16 +55,15 @@ const navigationSections: NavSection[] = [
     title: 'Quản lý Đăng bài & Nội dung',
     items: [
       {
-        name: 'Trung tâm Đăng bài',
-        href: '/posts',
-        icon: Share2,
-        badge: 'Hub',
+        name: 'Duyệt bài viết Tour (Sheet & Drive)',
+        href: '/posts?tab=workflow',
+        icon: ScrollText,
+        badge: 'Chờ duyệt',
         badgeColor: 'bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-600/40',
       },
-      { name: 'Đăng bài Sale (Cá nhân)', href: '/posts?tab=personal', icon: Users },
-      { name: 'Đăng bài Zalo OA (Hẹn giờ)', href: '/posts?tab=oa', icon: Building2, isOa: true },
       { name: 'Kế hoạch Tour & Ảnh Drive', href: '/posts?tab=tour', icon: FileSpreadsheet, isOa: true },
-      { name: 'Duyệt bài viết Tour', href: '/posts?tab=workflow', icon: ScrollText, isOa: true },
+      { name: 'Soạn bài & Hẹn giờ OA', href: '/posts?tab=oa', icon: Building2, isOa: true },
+      { name: 'Đăng bài Sale (Cá nhân)', href: '/posts?tab=personal', icon: Users },
     ],
   },
   {

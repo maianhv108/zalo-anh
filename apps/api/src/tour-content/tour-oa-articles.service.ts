@@ -105,6 +105,7 @@ export class TourOaArticlesService {
    * Lấy danh sách bài viết kèm bộ lọc tab: PENDING_APPROVAL, REVISED_PENDING, APPROVED, ALL
    */
   async findAll(status?: string, search?: string) {
+    this.loadFromDisk();
     // Nếu chưa có bài nào được sinh, tự động sinh từ Sheet + Drive
     if (this.articlesMap.size === 0) {
       await this.generateAllArticles();
