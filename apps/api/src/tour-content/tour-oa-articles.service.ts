@@ -231,11 +231,28 @@ export class TourOaArticlesService {
   }
 
   /**
+   * Lấy Access Token hợp lệ từ file lưu trữ hoặc môi trường
+   */
+  private getValidAccessToken(): string {
+    try {
+      const tokenPath = path.resolve('data/zalo-oa-token.json');
+      if (fs.existsSync(tokenPath)) {
+        const raw = fs.readFileSync(tokenPath, 'utf8');
+        const tokenObj = JSON.parse(raw);
+        if (tokenObj.accessToken) {
+          return tokenObj.accessToken;
+        }
+      }
+    } catch {}
+    return process.env.ZALO_OA_ACCESS_TOKEN || '';
+  }
+
+  /**
    * Đăng bài viết trực tiếp lên Zalo Official Account qua OpenAPI v2
    */
   async publishToZaloOa(id: string): Promise<{ success: boolean; zaloArticleId?: string; zaloArticleUrl?: string; message?: string }> {
     const article = await this.findOne(id);
-    const token = process.env.ZALO_OA_ACCESS_TOKEN;
+    const token = this.getValidAccessToken();
     if (!token) {
       return { success: false, message: 'Chưa cấu hình Zalo OA Access Token trong hệ thống' };
     }
