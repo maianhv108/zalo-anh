@@ -85,6 +85,8 @@ export interface TourOaArticle {
   updatedAt: string;
   approvedAt?: string;
   publishedAt?: string;
+  zaloArticleId?: string;
+  zaloArticleUrl?: string;
 }
 
 export function TourArticleWorkflow() {
@@ -167,20 +169,47 @@ export function TourArticleWorkflow() {
     }
   }, [selectedArticleId, articles]);
 
-  // 2. Thao tác DUYỆT BÀI -> Chuyển sang "Đã duyệt đăng bài"
+  // 2. Thao tác DUYỆT BÀI -> Chuyển sang "Đã duyệt đăng bài" và tự động đăng lên Zalo OA
   const handleApprove = async (articleId: string) => {
     setIsActionLoading(true);
     try {
       const updated = await fetchApi<TourOaArticle>(`/tour-content/articles/${articleId}/approve`, {
         method: 'POST',
       });
+      const publishedText = updated?.zaloArticleUrl
+        ? ` Đã tự động xuất bản trực tiếp lên Zalo OA TourLuk!`
+        : ` Bài đã được chuyển sang mục "Đã Duyệt Đăng Bài".`;
       setNotification({
         type: 'success',
-        message: `✅ Đã duyệt thành công bài viết ${articleId}! Bài đã được chuyển sang mục "Đã Duyệt Đăng Bài".`,
+        message: `✅ Đã duyệt thành công bài viết ${articleId}!${publishedText}`,
       });
       await loadArticles();
     } catch (e: any) {
       setNotification({ type: 'error', message: e.message || 'Lỗi khi duyệt bài viết.' });
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  // Thao tác đăng bài lên Zalo OA thủ công cho bài đã duyệt
+  const handlePublishToOa = async (articleId: string) => {
+    setIsActionLoading(true);
+    try {
+      const res = await fetchApi<{ success: boolean; zaloArticleUrl?: string; message?: string }>(
+        `/tour-content/articles/${articleId}/publish-oa`,
+        { method: 'POST' }
+      );
+      if (res?.success) {
+        setNotification({
+          type: 'success',
+          message: `🎉 Đã xuất bản thành công bài viết ${articleId} lên Zalo OA TourLuk!`,
+        });
+        await loadArticles();
+      } else {
+        setNotification({ type: 'error', message: res?.message || 'Không thể đăng lên Zalo OA' });
+      }
+    } catch (e: any) {
+      setNotification({ type: 'error', message: e.message || 'Lỗi khi đăng lên Zalo OA' });
     } finally {
       setIsActionLoading(false);
     }
@@ -558,7 +587,9 @@ export function TourArticleWorkflow() {
                             : 'text-amber-400'
                         }
                       >
-                        {selectedArticle.status === 'APPROVED'
+                        {selectedArticle.zaloArticleUrl
+                          ? 'Đã Xuất Bản Lên Zalo OA'
+                          : selectedArticle.status === 'APPROVED'
                           ? 'Đã Duyệt Đăng Bài'
                           : selectedArticle.status === 'REVISED_PENDING'
                           ? `Chờ Duyệt Lại (Đã sửa theo yêu cầu)`
@@ -569,6 +600,20 @@ export function TourArticleWorkflow() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {/* Nút Xem bài viết trên Zalo OA thực tế nếu đã đăng */}
+                  {selectedArticle.zaloArticleUrl && (
+                    <a
+                      href={selectedArticle.zaloArticleUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-blue-600/30 transition-all animate-pulse"
+                      title="Mở bài viết đã xuất bản trên Zalo OA"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Xem Trên Zalo OA</span>
+                    </a>
+                  )}
+
                   {/* Nút Tự Sửa */}
                   <Button
                     size="sm"
@@ -592,6 +637,19 @@ export function TourArticleWorkflow() {
                     <RotateCcw className="w-3.5 h-3.5 mr-1" />
                     Yêu Cầu Sửa
                   </Button>
+
+                  {/* Nút Đăng lên Zalo OA nếu bài đã duyệt nhưng chưa có link */}
+                  {selectedArticle.status === 'APPROVED' && !selectedArticle.zaloArticleUrl && (
+                    <Button
+                      size="sm"
+                      onClick={() => handlePublishToOa(selectedArticle.id)}
+                      disabled={isActionLoading}
+                      className="text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/20"
+                    >
+                      <Send className="w-3.5 h-3.5 mr-1" />
+                      Đăng Lên Zalo OA
+                    </Button>
+                  )}
 
                   {/* Nút Duyệt Bài Này */}
                   <Button

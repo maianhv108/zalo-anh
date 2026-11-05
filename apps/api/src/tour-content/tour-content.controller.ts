@@ -68,10 +68,16 @@ export class TourContentController {
   }
 
   @Post('articles/:tourId/approve')
-  @ApiOperation({ summary: 'Chị/Admin bấm Duyệt bài viết -> Chuyển sang Đã duyệt đăng bài' })
+  @ApiOperation({ summary: 'Chị/Admin bấm Duyệt bài viết -> Chuyển sang Đã duyệt đăng bài và tự động xuất bản lên Zalo OA' })
   async approveArticle(@Param('tourId') tourId: string, @Req() req: any) {
     const userId = req.user?.id;
     return this.tourOaArticlesService.approveArticle(tourId, userId);
+  }
+
+  @Post('articles/:tourId/publish-oa')
+  @ApiOperation({ summary: 'Đăng trực tiếp bài viết lên Zalo Official Account qua API' })
+  async publishArticleToOa(@Param('tourId') tourId: string) {
+    return this.tourOaArticlesService.publishToZaloOa(tourId);
   }
 
   @Post('articles/:tourId/request-revision')

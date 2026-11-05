@@ -60,6 +60,8 @@ export interface TourOaArticle {
   approvedAt?: string;
   publishedAt?: string;
   zaloOaPostId?: string;
+  zaloArticleId?: string;
+  zaloArticleUrl?: string;
 }
 
 @Injectable()
@@ -215,7 +217,123 @@ export class TourOaArticlesService {
     this.saveToDisk();
 
     this.logger.log(`✅ Đã DUYỆT thành công bài viết ${id}. Chuyển sang danh mục "Đã duyệt đăng bài".`);
-    return article;
+
+    // Tự động xuất bản lên Zalo OA nếu có cấu hình Access Token
+    if (process.env.ZALO_OA_ACCESS_TOKEN) {
+      try {
+        await this.publishToZaloOa(id);
+      } catch (pubErr: any) {
+        this.logger.warn(`Lỗi khi tự động đăng lên Zalo OA: ${pubErr.message}`);
+      }
+    }
+
+    return this.articlesMap.get(id) || article;
+  }
+
+  /**
+   * Đăng bài viết trực tiếp lên Zalo Official Account qua OpenAPI v2
+   */
+  async publishToZaloOa(id: string): Promise<{ success: boolean; zaloArticleId?: string; zaloArticleUrl?: string; message?: string }> {
+    const article = await this.findOne(id);
+    const token = process.env.ZALO_OA_ACCESS_TOKEN;
+    if (!token) {
+      return { success: false, message: 'Chưa cấu hình Zalo OA Access Token trong hệ thống' };
+    }
+
+    try {
+      // 1. Phân tích nội dung và tách thành các khối body Zalo (text & image)
+      const bodyBlocks: Array<{ type: 'text' | 'image'; content?: string; url?: string; caption?: string }> = [];
+      const parts = article.content.split(/(\[HÌNH_ẢNH[^\]]+\])/g);
+      let galleryIndex = 0;
+
+      for (const part of parts) {
+        if (!part.trim()) continue;
+        const imgMatch = part.match(/\[HÌNH_ẢNH_\d+:\s*([^\]]+)\]/);
+        if (imgMatch) {
+          const caption = imgMatch[1].trim();
+          const imgObj = article.galleryImages?.[galleryIndex] || article.coverImage;
+          const imgUrl = imgObj?.thumbnailUrl || 'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=1000&q=80';
+          bodyBlocks.push({
+            type: 'image',
+            url: imgUrl,
+            caption: caption.slice(0, 200),
+          });
+          galleryIndex++;
+        } else {
+          bodyBlocks.push({
+            type: 'text',
+            content: part.trim(),
+          });
+        }
+      }
+
+      // 2. Chuẩn bị ảnh bìa
+      const coverUrl = article.coverImage?.thumbnailUrl || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80';
+
+      const payload = {
+        type: 'normal',
+        title: article.title.slice(0, 150),
+        author: 'TourLuk Travel Official',
+        cover: {
+          cover_type: 'photo',
+          photo_url: coverUrl,
+          status: 'show',
+        },
+        description: (article.excerpt || article.title).slice(0, 300),
+        body: bodyBlocks.length > 0 ? bodyBlocks : [{ type: 'text', content: article.content }],
+        status: 'show', // Xuất bản công khai lên Zalo OA
+        comment: 'show',
+      };
+
+      // 3. Gửi request tạo bài viết lên Zalo OpenAPI
+      const res = await fetch('https://openapi.zalo.me/v2.0/article/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'access_token': token,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const resData = (await res.json()) as any;
+      this.logger.log(`Zalo OA Create Article response for ${id}: ${JSON.stringify(resData)}`);
+
+      if (resData.error !== 0 && !resData.data?.token) {
+        throw new Error(resData.message || 'Lỗi từ Zalo API');
+      }
+
+      // 4. Lấy ID bài viết mới tạo bằng cách query article/getslice
+      await new Promise((r) => setTimeout(r, 1500));
+      const sliceRes = await fetch('https://openapi.zalo.me/v2.0/article/getslice?offset=0&limit=3&type=normal', {
+        headers: { access_token: token },
+      });
+      const sliceData = (await sliceRes.json()) as any;
+      const latestArticle = sliceData.data?.medias?.[0];
+
+      const zaloArticleId = latestArticle?.id || resData.data?.token || 'pending';
+      const pageId = process.env.ZALO_OA_ID || '4585991630126061653';
+      const zaloArticleUrl = latestArticle?.link_view || `https://post.oa.zalo.me/d/${pageId}?id=${zaloArticleId}&pageId=${pageId}`;
+
+      // 5. Cập nhật bài viết trong hệ thống
+      article.status = 'PUBLISHED';
+      article.publishedAt = new Date().toISOString();
+      article.zaloArticleId = zaloArticleId;
+      article.zaloArticleUrl = zaloArticleUrl;
+
+      this.articlesMap.set(id, article);
+      this.saveToDisk();
+
+      this.logger.log(`🎉 ĐÃ ĐĂNG THÀNH CÔNG BÀI VIẾT ${id} LÊN ZALO OA! Link: ${zaloArticleUrl}`);
+      return {
+        success: true,
+        zaloArticleId,
+        zaloArticleUrl,
+        message: 'Đã xuất bản bài viết thành công lên Zalo Official Account!',
+      };
+    } catch (e: any) {
+      this.logger.error(`Lỗi khi đăng bài viết ${id} lên Zalo OA: ${e.message}`);
+      return { success: false, message: e.message };
+    }
   }
 
   /**
