@@ -5,6 +5,7 @@ import { TourContentService } from './tour-content.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ZaloPostStatus, AuditAction } from '@prisma/client';
 import { TourContentPlanItem, DriveImageItem } from './dto/tour-content.dto';
+import { TOUR_ARTICLE_BLUEPRINTS, generateArticleFromBlueprint } from './tour-article-templates';
 
 export type TourOaArticleStatus = 'PENDING_APPROVAL' | 'REVISED_PENDING' | 'APPROVED' | 'PUBLISHED';
 
@@ -343,110 +344,22 @@ export class TourOaArticlesService {
   }
 
   /**
-   * Bộ máy biên soạn nội dung bài viết Zalo OA chuẩn phong cách TourLuk
+   * Bộ máy biên soạn nội dung bài viết Zalo OA chuẩn phong cách TourLuk bám sát Google Sheet
+   * Tùy độ dài để bố trí 1 ảnh (bài ngắn) hoặc 2-3 ảnh (bài dài) xen kẽ hợp lý
    */
   private composeFullArticle(
     item: TourContentPlanItem,
     coverImage?: any,
     galleryImages: any[] = [],
   ): { hook: string; content: string } {
-    const title = item.title;
-    const dest = item.destination;
-    const brief = item.brief;
-    const cta = item.cta || 'Mở cẩm nang và lưu lại';
-    const keywords = item.keywords || '';
-    const audience = item.targetAudience || 'Du khách Việt Nam';
-
-    // 1. Tạo câu Hook thu hút
-    let hook = '';
-    if (item.id === 'ZA-001') {
-      hook = `🌟 Bạn ấp ủ giấc mơ khám phá nước Úc nhưng lo lắng thủ tục phức tạp, chi phí mập mờ và lịch trình quá tải? Đã đến lúc trải nghiệm du lịch hoàn toàn khác biệt cùng TourLuk!`;
-    } else if (item.id === 'ZA-002') {
-      hook = `✈️ Chỉ còn vài ngày nữa là khởi hành sang xứ sở chuột túi nhưng bạn vẫn chưa rõ quy định hải quan Úc, tiền tệ hay di chuyển? Lưu ngay cẩm nang kiểm tra thực tế này!`;
-    } else if (item.id === 'ZA-003') {
-      hook = `👨‍👩‍👧‍👦 Đi Sydney cùng cả gia đình có bố mẹ lớn tuổi và trẻ nhỏ: Làm sao để vừa check-in đủ các biểu tượng nổi tiếng vừa giữ sức khỏe thoải mái cho cả nhà?`;
-    } else if (item.id === 'ZA-004') {
-      hook = `🏙️ Sydney hoa lệ bên vịnh biển lộng gió hay Melbourne cổ kính ngập tràn văn hóa cà phê: Thành phố nào sẽ là điểm dừng chân lý tưởng nhất cho bạn?`;
-    } else if (item.id === 'ZA-005') {
-      hook = `🏖️ Trốn cái lạnh mùa đông, đón nắng ấm rực rỡ tại Queensland: Nên chọn Brisbane êm đềm bên sông hay thiên đường biển Gold Coast sôi động?`;
-    } else if (item.id === 'ZA-006') {
-      hook = `🦘 Nếu bạn đã đi quen bờ Đông nước Úc, hãy để Perth (Tây Úc) chinh phục bạn với làn nước biển xanh ngọc, đàn Quokka đáng yêu và khung cảnh thiên nhiên nguyên sơ!`;
-    } else if (item.id === 'ZA-007') {
-      hook = `❤️ "Chuyến đi tuyệt vời nhất không phải là đi được nhiều nơi nhất, mà là khi ông bà và các cháu đều có những nụ cười trọn vẹn suốt dọc đường."`;
-    } else if (item.id === 'ZA-008') {
-      hook = `🇦🇺 Người thân từ Việt Nam sang thăm nhưng bạn bận đi làm không thể đưa đi chơi cả tuần? Đừng lo, TourLuk đã có giải pháp tour linh hoạt đón tận nơi!`;
-    } else if (item.id === 'ZA-009') {
-      hook = `🦞 Đi Úc ăn gì đặc sản, mua quà gì chuẩn xịn không bị hớ và nên ghé những khu chợ nào náo nhiệt nhất? Cẩm nang ẩm thực & mua sắm không thể bỏ lỡ!`;
-    } else if (item.id === 'ZA-010') {
-      hook = `🗓️ Bạn có 5 ngày, 7 ngày hay 10 ngày cho chuyến đi Úc sắp tới? Đừng để thời gian trôi qua lãng phí với gợi ý phân bổ lịch trình tối ưu dưới đây.`;
-    } else if (item.id === 'ZA-011') {
-      hook = `💰 Đi tour Úc cần chuẩn bị ngân sách bao nhiêu? Phân tích chi tiết giá trọn gói, các khoản bao gồm và kinh nghiệm tránh chi phí ẩn khi đặt tour.`;
-    } else {
-      hook = `💡 12 kinh nghiệm xương máu được đúc kết từ hàng trăm chuyến đi thực tế của khách hàng TourLuk: Đọc kỹ trước khi đặt chân đến nước Úc!`;
+    const blueprint = TOUR_ARTICLE_BLUEPRINTS[item.id];
+    if (blueprint) {
+      return generateArticleFromBlueprint(blueprint, coverImage, galleryImages);
     }
 
-    // 2. Xây dựng thân bài viết Zalo OA hoàn chỉnh, lời văn tự nhiên & chuyên nghiệp
-    let content = `${hook}\n\n`;
-
-    // Lồng ghép khéo léo đối tượng và bối cảnh vào lời dẫn (không để thô)
-    if (audience.toLowerCase().includes('gia đình')) {
-      content += `✨ Nếu bạn đang lên kế hoạch cho chuyến đi của gia đình (đặc biệt cần lịch trình thong thả, an toàn và chu đáo cho cả người lớn tuổi lẫn trẻ nhỏ), đây chính là những điều bạn không nên bỏ lỡ.\n\n`;
-    } else if (audience.toLowerCase().includes('so sánh') || audience.toLowerCase().includes('định đặt')) {
-      content += `✨ Dành riêng cho bạn đang cân nhắc và so sánh các phương án chuyến đi: Những thông tin thực tế dưới đây sẽ giúp bạn đưa ra lựa chọn sáng suốt và tối ưu chi phí nhất.\n\n`;
-    } else if (audience.toLowerCase().includes('chuẩn bị') || audience.toLowerCase().includes('ấm')) {
-      content += `✨ Cẩm nang thực tế cập nhật mới nhất từ đội ngũ TourLuk, sẵn sàng đồng hành cùng bạn trên từng chặng đường khám phá ${dest}.\n\n`;
-    } else {
-      content += `✨ Đồng hành cùng TourLuk để chuẩn bị cho một hành trình khám phá nước Úc trọn vẹn, trút bỏ mọi âu lo về thủ tục và lịch trình.\n\n`;
-    }
-
-    content += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
-
-    // Phần nội dung chính triển khai theo Brief và lồng ghép Keywords
-    content += `🌟 THÔNG TIN CHI TIẾT & TRẢI NGHIỆM ĐÁNG GIÁ:\n\n`;
-    content += `${brief}\n\n`;
-
-    // Thêm các điểm nhấn thực tế chi tiết theo từng tour
-    if (dest.includes('Sydney')) {
-      content += `🏛️ TRẢI NGHIỆM ĐIỂM NHẤN TẠI SYDNEY:\n`;
-      content += `• Ngắm nhìn Nhà hát Con Sò (Sydney Opera House) và Cầu cảng Sydney Harbour từ góc nhìn Circular Quay tuyệt đẹp.\n`;
-      content += `• Thong thả dạo bộ phố cổ The Rocks, thưởng thức cà phê ngắm vịnh.\n`;
-      content += `• Khám phá bãi biển Bondi / Coogee cát trắng mịn màng với làn gió biển trong lành.\n`;
-      content += `• Di chuyển tiện lợi: Xe đưa đón khách sạn trung tâm, không phải đi bộ quá sức đối với gia đình có người lớn tuổi.\n\n`;
-    } else if (dest.includes('Melbourne')) {
-      content += `🍁 TRẢI NGHIỆM ĐIỂM NHẤN TẠI MELBOURNE:\n`;
-      content += `• Chiêm ngưỡng cung đường huyền thoại Great Ocean Road và cụm đá Mười Hai Tông Đồ (12 Apostles) kỳ vĩ.\n`;
-      content += `• Lạc vào những con ngõ nghệ thuật Grafitti Lane và văn hóa cà phê đậm chất châu Âu.\n`;
-      content += `• Ghé thăm vườn bách thảo Fitzroy Gardens xanh mát và ngôi nhà thuyền trưởng Cook cổ kính.\n`;
-      content += `• Lưu ý thời tiết: Melbourne nổi tiếng với "4 mùa trong 1 ngày", bạn nên chuẩn bị thêm áo khoác nhẹ khi di chuyển.\n\n`;
-    } else if (dest.includes('Perth')) {
-      content += `🌊 TRẢI NGHIỆM ĐIỂM NHẤN TẠI TÂY ÚC (PERTH):\n`;
-      content += `• Khám phá Đảo Rottnest bằng xe đạp / xe buýt sinh thái, chụp ảnh selfie cùng chú chuột túi Quokka siêu thân thiện.\n`;
-      content += `• Chiêm ngưỡng toàn cảnh thành phố từ Công viên Kings Park – một trong những công viên nội đô lớn nhất thế giới.\n`;
-      content += `• Du thuyền ngắm hoàng hôn trên sông Swan River êm đềm.\n`;
-      content += `• Thưởng thức hải sản tươi rói tại bến cảng cổ kính Fremantle.\n\n`;
-    } else if (dest.includes('Queensland') || dest.includes('Brisbane') || dest.includes('Gold Coast')) {
-      content += `☀️ TRẢI NGHIỆM ĐIỂM NHẤN TẠI QUEENSLAND:\n`;
-      content += `• Bờ biển Surfers Paradise dài bất tận với cát vàng và sóng xanh lý tưởng để nghỉ dưỡng.\n`;
-      content += `• Thành phố Brisbane trẻ trung, dạo bước khu văn hóa South Bank và ngắm sông bằng phà CityCat.\n`;
-      content += `• Thiên đường giải trí công viên chủ đề (Theme Parks) cực kỳ hấp dẫn cho các bé và gia đình.\n\n`;
-    } else {
-      content += `💎 CAM KẾT CHẤT LƯỢNG TỪ TOURLUK TRAVEL:\n`;
-      content += `✅ Lịch trình thông minh, ngắt nhịp khoa học giúp bạn tận hưởng trọn vẹn từng điểm đến.\n`;
-      content += `✅ Hướng dẫn viên người Việt nhiệt huyết, chu đáo, am hiểu sâu sắc văn hóa và con người bản địa.\n`;
-      content += `✅ Hỗ trợ toàn diện từ thủ tục Visa Úc, sim 4G, bảo hiểm du lịch đến điểm đón xe thuận tiện nhất.\n`;
-      content += `✅ Minh bạch 100% về chi phí, không phụ thu bất ngờ, không ép mua sắm.\n\n`;
-    }
-
-    content += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
-
-    // Phần Call To Action (CTA) chuẩn theo Sheet
-    content += `👉 ${cta.toUpperCase()}\n`;
-    content += `📲 Nhắn tin trực tiếp qua Zalo OA của TourLuk hoặc bấm nút "Quan tâm" ngay bên dưới để chuyên viên gửi trọn bộ thông tin và tư vấn miễn phí cho chuyến đi của bạn!\n\n`;
-
-    // Hashtags chuẩn SEO
-    const cleanDestTag = dest.replace(/[^a-zA-Z0-9]/g, '') || 'NuocUc';
-    content += `#TourLuk #DuLichUc #UcDeHieu #KhamPhaUc #${cleanDestTag} #ZaloOA #TourTronGoi`;
-
+    // Fallback nếu không tìm thấy blueprint
+    const hook = `🌟 Khám phá nước Úc trọn vẹn và an tâm cùng TourLuk Travel!`;
+    const content = `${hook}\n\n${item.brief}\n\n👉 ${item.cta}`;
     return { hook, content };
   }
 

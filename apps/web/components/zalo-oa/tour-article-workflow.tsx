@@ -688,42 +688,121 @@ export function TourArticleWorkflow() {
                           {selectedArticle.hook}
                         </div>
 
-                        {/* Thân bài viết Zalo OA hoàn chỉnh */}
-                        <div className="space-y-2 text-[11px] leading-relaxed text-slate-300 whitespace-pre-line font-sans">
-                          {selectedArticle.content}
-                        </div>
+                        {/* Thân bài viết Zalo OA hoàn chỉnh xen kẽ ảnh thực tế */}
+                        <div className="space-y-3 text-[11px] leading-relaxed text-slate-300 font-sans">
+                          {(() => {
+                            const content = selectedArticle.content || '';
+                            const gallery = selectedArticle.galleryImages || [];
+                            const imageRegex = /📸 \[HÌNH_ẢNH_(\d+): ([^\]]+)\]/g;
 
-                        {/* Chùm ảnh thực tế trong bài từ Google Drive */}
-                        {selectedArticle.galleryImages && selectedArticle.galleryImages.length > 0 && (
-                          <div className="space-y-1.5 pt-2">
-                            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
-                              <ImageIcon className="w-3.5 h-3.5 text-indigo-400" />
-                              Ảnh Thực Tế Chuyến Đi ({selectedArticle.galleryImages.length} ảnh):
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              {selectedArticle.galleryImages.map((img, idx) => (
-                                <div
-                                  key={idx}
-                                  className="h-24 rounded-lg overflow-hidden border border-slate-800 bg-slate-900 relative cursor-pointer hover:border-indigo-500 transition-all"
-                                  onClick={() => setPreviewImage(img.webViewLink || img.thumbnailUrl)}
-                                >
-                                  <img
-                                    src={img.thumbnailUrl}
-                                    alt={img.name}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      (e.target as any).src =
-                                        'https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?auto=format&fit=crop&w=400&q=80';
-                                    }}
-                                  />
-                                  <span className="absolute bottom-1 left-1 bg-black/70 text-[8px] text-slate-200 px-1 rounded truncate max-w-[90%]">
-                                    {img.name}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                            // Kiểm tra xem bài có thẻ ảnh inline không
+                            const hasInlineTags = imageRegex.test(content);
+                            imageRegex.lastIndex = 0; // reset regex index
+
+                            if (!hasInlineTags) {
+                              return (
+                                <>
+                                  <div className="whitespace-pre-line">{content}</div>
+                                  {gallery.length > 0 && (
+                                    <div className="space-y-1.5 pt-2">
+                                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                                        <ImageIcon className="w-3.5 h-3.5 text-indigo-400" />
+                                        Ảnh Thực Tế Chuyến Đi ({gallery.length} ảnh):
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-2">
+                                        {gallery.map((img, idx) => (
+                                          <div
+                                            key={idx}
+                                            className="h-24 rounded-lg overflow-hidden border border-slate-800 bg-slate-900 relative cursor-pointer hover:border-indigo-500 transition-all"
+                                            onClick={() => setPreviewImage(img.webViewLink || img.thumbnailUrl)}
+                                          >
+                                            <img
+                                              src={img.thumbnailUrl}
+                                              alt={img.name}
+                                              className="w-full h-full object-cover"
+                                              onError={(e) => {
+                                                (e.target as any).src =
+                                                  'https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?auto=format&fit=crop&w=400&q=80';
+                                              }}
+                                            />
+                                            <span className="absolute bottom-1 left-1 bg-black/70 text-[8px] text-slate-200 px-1 rounded truncate max-w-[90%]">
+                                              {img.name}
+                                            </span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </>
+                              );
+                            }
+
+                            // Render bài viết xen kẽ ảnh inline
+                            const parts: React.ReactNode[] = [];
+                            let lastIndex = 0;
+                            let match: RegExpExecArray | null;
+
+                            while ((match = imageRegex.exec(content)) !== null) {
+                              const textBefore = content.substring(lastIndex, match.index);
+                              if (textBefore.trim()) {
+                                parts.push(
+                                  <div key={`txt-${lastIndex}`} className="whitespace-pre-line">
+                                    {textBefore}
+                                  </div>,
+                                );
+                              }
+
+                              const imgIdx = parseInt(match[1], 10) - 1;
+                              const caption = match[2];
+                              const img = gallery[imgIdx];
+
+                              parts.push(
+                                <div key={`inline-img-${match.index}`} className="my-3 space-y-1">
+                                  <div
+                                    className="rounded-xl overflow-hidden border border-slate-700/80 bg-slate-900 shadow-md relative cursor-pointer group hover:border-indigo-500 transition-all"
+                                    onClick={() => setPreviewImage(img?.webViewLink || img?.thumbnailUrl || null)}
+                                    title="Bấm để xem ảnh phóng to từ Google Drive"
+                                  >
+                                    {img?.thumbnailUrl ? (
+                                      <img
+                                        src={img.thumbnailUrl}
+                                        alt={caption}
+                                        className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-300"
+                                        onError={(e) => {
+                                          (e.target as any).src =
+                                            'https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?auto=format&fit=crop&w=600&q=80';
+                                        }}
+                                      />
+                                    ) : (
+                                      <div className="h-36 flex items-center justify-center bg-slate-800 text-slate-500">
+                                        <ImageIcon className="w-6 h-6" />
+                                      </div>
+                                    )}
+                                    <span className="absolute bottom-1.5 right-1.5 bg-black/75 backdrop-blur-sm text-[9px] text-slate-200 px-2 py-0.5 rounded-full font-medium">
+                                      🔍 Xem ảnh Drive
+                                    </span>
+                                  </div>
+                                  <p className="text-[10px] text-center text-slate-400 italic font-medium px-2">
+                                    📸 {caption}
+                                  </p>
+                                </div>,
+                              );
+
+                              lastIndex = match.index + match[0].length;
+                            }
+
+                            const remainingText = content.substring(lastIndex);
+                            if (remainingText.trim()) {
+                              parts.push(
+                                <div key={`txt-${lastIndex}`} className="whitespace-pre-line">
+                                  {remainingText}
+                                </div>,
+                              );
+                            }
+
+                            return parts;
+                          })()}
+                        </div>
 
                         {/* Call To Action Box (Khung kêu gọi Zalo OA) */}
                         <div className="p-3 bg-gradient-to-tr from-blue-950/60 to-slate-900 rounded-xl border border-blue-500/30 text-center space-y-2 mt-3">
