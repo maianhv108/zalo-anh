@@ -467,11 +467,11 @@ export default function ConnectionsCenterPage() {
             <div>
               <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-wide flex items-center gap-2">
                 Trung Tâm Quản Lý Kết Nối Zalo
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30 font-bold uppercase">
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30 font-bold uppercase shadow-xs">
                   Multi-Account Hub
                 </span>
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 font-medium">
                 Giám sát 24/7 trạng thái đa tài khoản Zalo Sale & Zalo OA Doanh Nghiệp, xử lý ngắt kết nối và lịch sử đồng bộ
               </p>
             </div>
@@ -865,7 +865,7 @@ export default function ConnectionsCenterPage() {
                   const isOa = conn.provider === 'ZALO_OA';
 
                   return (
-                    <tr key={conn.id} className="hover:bg-slate-50/80 dark:hover:bg-[#121c32]/50 transition-colors">
+                    <tr key={conn.id} className="bg-white dark:bg-[#0d1527] hover:bg-slate-50 dark:hover:bg-[#121c32]/80 transition-colors">
                       {/* Cột 1: Kênh & Label */}
                       <td className="py-4 px-4">
                         <div className="flex items-center gap-3">
@@ -882,7 +882,7 @@ export default function ConnectionsCenterPage() {
                             <div className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
                               {conn.accountLabel}
                             </div>
-                            <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-2">
+                            <div className="text-[10px] text-slate-600 dark:text-slate-400 mt-0.5 flex items-center gap-2 font-medium">
                               <span>Mã: {conn.id.slice(-6)}</span>
                               <span>•</span>
                               <span>{conn._count?.conversations || 0} hội thoại</span>
@@ -893,10 +893,10 @@ export default function ConnectionsCenterPage() {
 
                       {/* Cột 2: Nhân viên phụ trách */}
                       <td className="py-4 px-4">
-                        <div className="font-semibold text-slate-900 dark:text-slate-200">
+                        <div className="font-bold text-slate-900 dark:text-slate-100 text-xs">
                           {conn.user?.name || 'Chưa gán'}
                         </div>
-                        <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                        <div className="text-[10px] text-slate-600 dark:text-slate-400 font-medium">
                           {conn.user?.code} {conn.user?.phone ? `• ${conn.user?.phone}` : ''}
                         </div>
                       </td>
@@ -921,8 +921,8 @@ export default function ConnectionsCenterPage() {
                       <td className="py-4 px-4">
                         {conn.lastCheckedAt ? (
                           <div>
-                            <div className="text-slate-800 dark:text-slate-200 font-medium">{formatDate(conn.lastCheckedAt)}</div>
-                            <div className="text-[10px] text-slate-500 dark:text-slate-400">Tự động ping 24/7</div>
+                            <div className="text-slate-900 dark:text-slate-100 font-semibold text-xs">{formatDate(conn.lastCheckedAt)}</div>
+                            <div className="text-[10px] text-slate-600 dark:text-slate-400 font-medium">Tự động ping 24/7</div>
                           </div>
                         ) : (
                           <span className="text-slate-500 italic">Chưa kiểm tra</span>
@@ -936,12 +936,12 @@ export default function ConnectionsCenterPage() {
                             {conn.lastErrorCode}
                           </div>
                         ) : status === 'CONNECTED' ? (
-                          <span className="text-emerald-600 dark:text-emerald-400 text-[11px] font-medium flex items-center gap-1">
+                          <span className="text-emerald-700 dark:text-emerald-400 text-[11px] font-semibold flex items-center gap-1">
                             <Check className="w-3 h-3 shrink-0" />
                             Kết nối ổn định 24/7
                           </span>
                         ) : (
-                          <span className="text-slate-600 dark:text-slate-400 text-[11px]">Bình thường</span>
+                          <span className="text-slate-700 dark:text-slate-300 text-[11px] font-medium">Bình thường</span>
                         )}
                       </td>
 

@@ -44,11 +44,14 @@ html:not(.dark) body {
 .dark .bg-slate-50\/30,
 .dark .bg-slate-50\/50,
 .dark .bg-slate-50\/70,
-.dark .bg-slate-100 {
+.dark .bg-slate-100,
+.dark .bg-slate-100\/70,
+.dark .bg-slate-100\/80,
+.dark [class*="bg-slate-100"],
+.dark [class*="bg-slate-50"] {
   background-color: #080d19 !important;
 }
 
-.dark .bg-slate-100\/80,
 .dark .bg-slate-200,
 .dark .bg-slate-200\/60 {
   background-color: #141f36 !important;
@@ -122,12 +125,42 @@ html:not(.dark) body {
   border-bottom: 1px solid #1a2842 !important;
 }
 
+.dark thead th {
+  color: #cbd5e1 !important;
+}
+
 .dark tbody tr {
+  background-color: #0d1527 !important;
   border-bottom: 1px solid #141f36 !important;
+  color: #f1f5f9 !important;
 }
 
 .dark tbody tr:hover {
-  background-color: #101a2e !important;
+  background-color: #121c32 !important;
+}
+
+/* Light Table Styles */
+html:not(.dark) table {
+  color: #0f172a;
+}
+
+html:not(.dark) thead tr {
+  background-color: #f1f5f9 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+}
+
+html:not(.dark) thead th {
+  color: #1e293b !important;
+}
+
+html:not(.dark) tbody tr {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+html:not(.dark) tbody tr:hover {
+  background-color: #f8fafc !important;
 }
 
 /* Hover effects */

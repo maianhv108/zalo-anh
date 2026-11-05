@@ -278,17 +278,17 @@ export default function InboxPage() {
       <div className="flex items-center justify-between shrink-0">
         <div>
           <div className="flex items-center gap-2.5">
-            <h2 className="text-xl font-bold text-slate-100">Hộp Thư Hội Thoại Nhiều Tài Khoản (Multi-Panel Inbox)</h2>
+            <h2 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Hộp Thư Hội Thoại Nhiều Tài Khoản (Multi-Panel Inbox)</h2>
             <DemoBadge />
           </div>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 font-medium">
             Theo dõi hội thoại Zalo từ nhiều Sale cùng lúc. Mở tối đa 3 khung chat song song trên desktop.
           </p>
         </div>
 
         <div className="flex items-center gap-2.5">
           {/* Chế độ xem: 1 Khung chuẩn hoặc Mở song song */}
-          <div className="flex items-center gap-1 bg-[#080d19] p-0.5 rounded-xl border border-[#1a2842] text-xs">
+          <div className="flex items-center gap-1 bg-slate-200/80 dark:bg-[#080d19] p-0.5 rounded-xl border border-slate-300 dark:border-[#1a2842] text-xs">
             <button
               type="button"
               onClick={() => {
@@ -298,7 +298,7 @@ export default function InboxPage() {
                 }
               }}
               className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-medium transition-all ${
-                !isMultiPanelMode ? 'bg-red-600 text-white shadow-xs font-semibold' : 'text-slate-400 hover:text-slate-200'
+                !isMultiPanelMode ? 'bg-red-600 text-white shadow-xs font-semibold' : 'text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <Columns className="h-3.5 w-3.5" />
@@ -308,7 +308,7 @@ export default function InboxPage() {
               type="button"
               onClick={() => setIsMultiPanelMode(true)}
               className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-medium transition-all ${
-                isMultiPanelMode ? 'bg-red-600 text-white shadow-xs font-semibold' : 'text-slate-400 hover:text-slate-200'
+                isMultiPanelMode ? 'bg-red-600 text-white shadow-xs font-semibold' : 'text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <Columns3 className="h-3.5 w-3.5" />

@@ -385,18 +385,24 @@ export class TourOaArticlesService {
       hook = `💡 12 kinh nghiệm xương máu được đúc kết từ hàng trăm chuyến đi thực tế của khách hàng TourLuk: Đọc kỹ trước khi đặt chân đến nước Úc!`;
     }
 
-    // 2. Xây dựng thân bài viết Zalo OA hoàn chỉnh
+    // 2. Xây dựng thân bài viết Zalo OA hoàn chỉnh, lời văn tự nhiên & chuyên nghiệp
     let content = `${hook}\n\n`;
 
-    // Phần mở đầu: Giới thiệu thông tin tour & đối tượng
-    content += `📍 ĐIỂM ĐẾN: ${dest.toUpperCase()}\n`;
-    content += `🎯 PHÙ HỢP CHO: ${audience}\n`;
-    content += `📅 LỊCH PHÁT SÓNG ĐỀ XUẤT: ${item.publishDate} lúc ${item.suggestedTime}\n\n`;
+    // Lồng ghép khéo léo đối tượng và bối cảnh vào lời dẫn (không để thô)
+    if (audience.toLowerCase().includes('gia đình')) {
+      content += `✨ Nếu bạn đang lên kế hoạch cho chuyến đi của gia đình (đặc biệt cần lịch trình thong thả, an toàn và chu đáo cho cả người lớn tuổi lẫn trẻ nhỏ), đây chính là những điều bạn không nên bỏ lỡ.\n\n`;
+    } else if (audience.toLowerCase().includes('so sánh') || audience.toLowerCase().includes('định đặt')) {
+      content += `✨ Dành riêng cho bạn đang cân nhắc và so sánh các phương án chuyến đi: Những thông tin thực tế dưới đây sẽ giúp bạn đưa ra lựa chọn sáng suốt và tối ưu chi phí nhất.\n\n`;
+    } else if (audience.toLowerCase().includes('chuẩn bị') || audience.toLowerCase().includes('ấm')) {
+      content += `✨ Cẩm nang thực tế cập nhật mới nhất từ đội ngũ TourLuk, sẵn sàng đồng hành cùng bạn trên từng chặng đường khám phá ${dest}.\n\n`;
+    } else {
+      content += `✨ Đồng hành cùng TourLuk để chuẩn bị cho một hành trình khám phá nước Úc trọn vẹn, trút bỏ mọi âu lo về thủ tục và lịch trình.\n\n`;
+    }
 
     content += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
     // Phần nội dung chính triển khai theo Brief và lồng ghép Keywords
-    content += `✨ NỘI DUNG NỔI BẬT DÀNH CHO BẠN:\n\n`;
+    content += `🌟 THÔNG TIN CHI TIẾT & TRẢI NGHIỆM ĐÁNG GIÁ:\n\n`;
     content += `${brief}\n\n`;
 
     // Thêm các điểm nhấn thực tế chi tiết theo từng tour
@@ -431,18 +437,6 @@ export class TourOaArticlesService {
       content += `✅ Minh bạch 100% về chi phí, không phụ thu bất ngờ, không ép mua sắm.\n\n`;
     }
 
-    // Bổ sung chùm ảnh thực tế lấy từ Google Drive
-    if (coverImage || galleryImages.length > 0) {
-      content += `📸 HÌNH ẢNH THỰC TẾ TRONG BÀI VIẾT (Từ Google Drive TourLuk):\n`;
-      if (coverImage) {
-        content += `• [Ảnh bìa Hero]: ${coverImage.name} (Khu vực: ${coverImage.region})\n`;
-      }
-      galleryImages.forEach((img, idx) => {
-        content += `• [Ảnh minh họa ${idx + 1}]: ${img.name} (${img.region})\n`;
-      });
-      content += `\n`;
-    }
-
     content += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
     // Phần Call To Action (CTA) chuẩn theo Sheet
@@ -450,7 +444,8 @@ export class TourOaArticlesService {
     content += `📲 Nhắn tin trực tiếp qua Zalo OA của TourLuk hoặc bấm nút "Quan tâm" ngay bên dưới để chuyên viên gửi trọn bộ thông tin và tư vấn miễn phí cho chuyến đi của bạn!\n\n`;
 
     // Hashtags chuẩn SEO
-    content += `#TourLuk #DuLichUc #UcDeHieu #KhamPhaUc #${dest.replace(/[^a-zA-Z0-9]/g, '')} #ZaloOA #TourTronGoi`;
+    const cleanDestTag = dest.replace(/[^a-zA-Z0-9]/g, '') || 'NuocUc';
+    content += `#TourLuk #DuLichUc #UcDeHieu #KhamPhaUc #${cleanDestTag} #ZaloOA #TourTronGoi`;
 
     return { hook, content };
   }

@@ -372,10 +372,10 @@ export function TourArticleWorkflow() {
           {/* Tab 4: Tất Cả */}
           <button
             onClick={() => setActiveTab('ALL')}
-            className={`px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+            className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
               activeTab === 'ALL'
-                ? 'bg-slate-800 text-white border border-slate-600'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-slate-900 text-white border border-slate-700 dark:bg-slate-800'
+                : 'text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100/80 dark:bg-transparent border border-slate-200 dark:border-transparent'
             }`}
           >
             Tất Cả ({counts.total})
@@ -385,14 +385,14 @@ export function TourArticleWorkflow() {
         {/* Thanh tìm kiếm & Nút hành động */}
         <div className="flex items-center gap-2.5">
           <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               placeholder="Tìm bài viết, tour, điểm đến..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && loadArticles()}
-              className="bg-slate-900/90 border border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-52"
+              className="bg-slate-50 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 w-52"
             />
           </div>
 
@@ -401,10 +401,10 @@ export function TourArticleWorkflow() {
             variant="outline"
             onClick={handleRegenerateAll}
             disabled={isActionLoading}
-            className="text-xs border-indigo-500/30 bg-indigo-950/20 text-indigo-300 hover:bg-indigo-900/40"
+            className="text-xs font-bold border border-indigo-300 dark:border-indigo-500/40 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:text-indigo-300 dark:hover:bg-indigo-900/60 shadow-xs"
             title="Đồng bộ và viết lại toàn bộ 12 bài viết từ Google Sheet & Drive"
           >
-            <Sparkles className="w-3.5 h-3.5 mr-1.5 text-indigo-400" />
+            <Sparkles className="w-3.5 h-3.5 mr-1.5 text-indigo-600 dark:text-indigo-400" />
             Viết Lại 12 Bài
           </Button>
 
@@ -412,7 +412,7 @@ export function TourArticleWorkflow() {
             size="sm"
             onClick={() => loadArticles()}
             disabled={isLoading}
-            className="bg-slate-800 hover:bg-slate-700 text-white text-xs"
+            className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-md shadow-red-600/20"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>
