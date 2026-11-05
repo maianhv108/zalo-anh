@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Share2,
   Plus,
@@ -105,8 +106,18 @@ const SAMPLE_IMAGES = [
 
 export type PostTab = 'workflow' | 'tour' | 'oa' | 'personal';
 
-export default function PostsPage() {
-  const [activeTab, setActiveTab] = useState<PostTab>('workflow');
+function PostsContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab') as PostTab | null;
+
+  const [activeTab, setActiveTab] = useState<PostTab>(() => {
+    if (tabParam && ['workflow', 'tour', 'oa', 'personal'].includes(tabParam)) {
+      return tabParam;
+    }
+    return 'workflow';
+  });
+
   const [posts, setPosts] = useState<BroadcastPost[]>([]);
   const [availableAccounts, setAvailableAccounts] = useState<SaleAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -154,30 +165,20 @@ export default function PostsPage() {
 
   useEffect(() => {
     loadData();
-
-    if (typeof window !== 'undefined') {
-      const handleUrlTab = () => {
-        const params = new URLSearchParams(window.location.search);
-        const tab = params.get('tab');
-        if (tab === 'oa' || tab === 'tour' || tab === 'workflow' || tab === 'personal') {
-          setActiveTab(tab as PostTab);
-        } else {
-          setActiveTab('workflow');
-        }
-      };
-      handleUrlTab();
-      window.addEventListener('popstate', handleUrlTab);
-      return () => window.removeEventListener('popstate', handleUrlTab);
-    }
   }, []);
+
+  // Lắng nghe thay đổi tab từ URL searchParams
+  useEffect(() => {
+    if (tabParam && ['workflow', 'tour', 'oa', 'personal'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    } else if (!tabParam) {
+      setActiveTab('workflow');
+    }
+  }, [tabParam]);
 
   const handleSwitchTab = (tab: PostTab) => {
     setActiveTab(tab);
-    if (typeof window !== 'undefined') {
-      const url = new URL(window.location.href);
-      url.searchParams.set('tab', tab);
-      window.history.pushState({}, '', url.toString());
-    }
+    router.push(`/posts?tab=${tab}`);
   };
 
   // Toggle select all accounts
@@ -1077,5 +1078,22 @@ export default function PostsPage() {
         </Modal>
       )}
     </div>
+  );
+}
+
+export default function PostsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400 text-xs">
+            <RefreshCw className="w-4 h-4 animate-spin text-red-500" />
+            <span>Đang tải trung tâm quản lý đăng bài...</span>
+          </div>
+        </div>
+      }
+    >
+      <PostsContent />
+    </Suspense>
   );
 }

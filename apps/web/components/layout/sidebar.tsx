@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   LayoutDashboard,
   Users,
@@ -86,20 +86,10 @@ const navigationSections: NavSection[] = [
   },
 ];
 
-export function Sidebar() {
+function SidebarContent() {
   const pathname = usePathname();
-  const [currentQuery, setCurrentQuery] = React.useState('');
-
-  React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setCurrentQuery(window.location.search);
-      const handleLocationChange = () => {
-        setCurrentQuery(window.location.search);
-      };
-      window.addEventListener('popstate', handleLocationChange);
-      return () => window.removeEventListener('popstate', handleLocationChange);
-    }
-  }, [pathname]);
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get('tab') || '';
 
   return (
     <aside className="w-64 bg-white text-slate-800 border-r border-slate-200 dark:bg-[#060a14] dark:text-slate-200 dark:border-[#162035] flex flex-col shrink-0 select-none shadow-sm dark:shadow-2xl transition-colors">
@@ -151,9 +141,10 @@ export function Sidebar() {
               let isActive = false;
               if (item.href.includes('?')) {
                 const [targetPath, targetQuery] = item.href.split('?');
-                isActive = pathname === targetPath && currentQuery === `?${targetQuery}`;
+                const targetTab = new URLSearchParams(targetQuery).get('tab');
+                isActive = pathname === targetPath && currentTab === targetTab;
               } else if (item.href === '/posts') {
-                isActive = pathname === '/posts' && (!currentQuery || currentQuery === '?tab=all');
+                isActive = pathname === '/posts' && (!currentTab || currentTab === 'all' || currentTab === 'workflow');
               } else {
                 isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(`${item.href}`));
               }
@@ -163,13 +154,6 @@ export function Sidebar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => {
-                    if (item.href.includes('?')) {
-                      setCurrentQuery(item.href.substring(item.href.indexOf('?')));
-                    } else {
-                      setCurrentQuery('');
-                    }
-                  }}
                   className={cn(
                     'flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all group',
                     isActive
@@ -240,5 +224,13 @@ export function Sidebar() {
         </div>
       </div>
     </aside>
+  );
+}
+
+export function Sidebar() {
+  return (
+    <Suspense fallback={<aside className="w-64 bg-white border-r border-slate-200 dark:bg-[#060a14]" />}>
+      <SidebarContent />
+    </Suspense>
   );
 }
