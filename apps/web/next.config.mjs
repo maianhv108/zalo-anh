@@ -2,6 +2,12 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@sales-zalo/shared'],
+  // Fix lỗi "multiple modules with names that only differ in casing" trên Windows
+  webpack: (config) => {
+    config.resolve.symlinks = false;
+    config.cache = false;
+    return config;
+  },
   async rewrites() {
     return [
       {
