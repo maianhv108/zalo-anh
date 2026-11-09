@@ -300,7 +300,7 @@ export function TourArticleWorkflow() {
         setRecentlyRewrittenText(res.rewrittenText);
         setNotification({
           type: 'success',
-          message: `✨ Đã viết lại thành công đoạn văn bản theo yêu cầu của chị!`,
+          message: `✨ Đã thay thế trực tiếp đoạn văn mới vào bài viết!`,
         });
         setIsRegenModalOpen(false);
         setHighlightedText('');
@@ -308,8 +308,8 @@ export function TourArticleWorkflow() {
         setRegenInstruction('');
         await loadArticles(undefined, res.article.id);
 
-        // Xóa hiệu ứng highlight sau 6s
-        setTimeout(() => setRecentlyRewrittenText(null), 6000);
+        // Giữ hiệu ứng highlight 20s để chị thấy rõ đoạn văn vừa được thay thế
+        setTimeout(() => setRecentlyRewrittenText(null), 20000);
       }
     } catch (e: any) {
       setNotification({ type: 'error', message: e.message || 'Lỗi khi viết lại đoạn văn.' });
@@ -852,6 +852,32 @@ export function TourArticleWorkflow() {
                             const gallery = selectedArticle.galleryImages || [];
                             const imageRegex = /📸 \[HÌNH_ẢNH_(\d+): ([^\]]+)\]/g;
 
+                            // Hàm tô sáng trực quan đoạn văn bản vừa được AI viết lại
+                            const renderParagraphWithHighlight = (text: string) => {
+                              const needle = (recentlyRewrittenText || '').trim();
+                              if (!needle || !text.includes(needle)) {
+                                return text;
+                              }
+                              const chunks = text.split(needle);
+                              return (
+                                <>
+                                  {chunks.map((chunk, cIdx) => (
+                                    <React.Fragment key={cIdx}>
+                                      {chunk}
+                                      {cIdx < chunks.length - 1 && (
+                                        <span className="inline-block bg-emerald-500/25 border-l-2 border-emerald-400 text-emerald-200 px-2 py-1 rounded my-1 shadow-md ring-1 ring-emerald-500/50 animate-pulse">
+                                          <span className="inline-flex items-center gap-1 text-[9px] bg-emerald-600 text-white font-bold px-1.5 py-0.5 rounded-full mr-1.5 uppercase tracking-wider">
+                                            ✨ Đoạn vừa sửa mới
+                                          </span>
+                                          {needle}
+                                        </span>
+                                      )}
+                                    </React.Fragment>
+                                  ))}
+                                </>
+                              );
+                            };
+
                             // Kiểm tra xem bài có thẻ ảnh inline không
                             const hasInlineTags = imageRegex.test(content);
                             imageRegex.lastIndex = 0; // reset regex index
@@ -859,7 +885,7 @@ export function TourArticleWorkflow() {
                             if (!hasInlineTags) {
                               return (
                                 <>
-                                  <div className="whitespace-pre-line">{content}</div>
+                                  <div className="whitespace-pre-line">{renderParagraphWithHighlight(content)}</div>
                                   {gallery.length > 0 && (
                                     <div className="space-y-1.5 pt-2">
                                       <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
@@ -904,7 +930,7 @@ export function TourArticleWorkflow() {
                               if (textBefore.trim()) {
                                 parts.push(
                                   <div key={`txt-${lastIndex}`} className="whitespace-pre-line">
-                                    {textBefore}
+                                    {renderParagraphWithHighlight(textBefore)}
                                   </div>,
                                 );
                               }
@@ -952,7 +978,7 @@ export function TourArticleWorkflow() {
                             if (remainingText.trim()) {
                               parts.push(
                                 <div key={`txt-${lastIndex}`} className="whitespace-pre-line">
-                                  {remainingText}
+                                  {renderParagraphWithHighlight(remainingText)}
                                 </div>,
                               );
                             }

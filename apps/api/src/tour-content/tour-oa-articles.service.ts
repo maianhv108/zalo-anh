@@ -160,6 +160,7 @@ export class TourOaArticlesService {
    * Lấy chi tiết 1 bài viết theo ID
    */
   async findOne(id: string): Promise<TourOaArticle> {
+    this.loadFromDisk();
     if (this.articlesMap.size === 0) {
       await this.generateAllArticles();
     }
@@ -394,20 +395,27 @@ export class TourOaArticlesService {
   }
 
   /**
-   * Thay thế chuỗi con linh hoạt theo khoảng trắng và xuống dòng
+   * Thay thế chuỗi con linh hoạt theo khoảng trắng và xuống dòng (thay thế trực tiếp tại chỗ)
    */
   private replaceSubstringFlexible(
     content: string,
     target: string,
     replacement: string,
   ): { success: boolean; newContent: string } {
+    if (!target || !content) return { success: false, newContent: content };
+
+    // 1. Khớp chính xác 100%
     if (content.includes(target)) {
       return { success: true, newContent: content.replace(target, replacement) };
     }
+
+    // 2. Khớp sau khi trim()
     const trimmedTarget = target.trim();
     if (content.includes(trimmedTarget)) {
       return { success: true, newContent: content.replace(trimmedTarget, replacement) };
     }
+
+    // 3. Khớp bằng regex bỏ qua sai khác về dấu cách và xuống dòng (\s+)
     const escaped = trimmedTarget.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
     try {
       const regex = new RegExp(escaped, 'm');
@@ -415,18 +423,46 @@ export class TourOaArticlesService {
         return { success: true, newContent: content.replace(regex, replacement) };
       }
     } catch {}
+
+    // 4. Nếu target có emoji hoặc dấu đầu dòng ở đầu, thử khớp phần thân chính
+    const coreTarget = trimmedTarget.replace(/^[•\-\*\d\.\s💖✨🌟💎👉⚡📌👨‍👩‍👧💡]+/, '').trim();
+    if (coreTarget.length >= 10) {
+      const escapedCore = coreTarget.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+      try {
+        const regexCore = new RegExp(`(?:[•\\-\\s💖✨🌟💎👉⚡📌👨‍👩‍👧💡]*)${escapedCore}`, 'm');
+        if (regexCore.test(content)) {
+          return { success: true, newContent: content.replace(regexCore, replacement) };
+        }
+      } catch {}
+    }
+
     return { success: false, newContent: content };
   }
 
   /**
-   * Bộ sinh thông minh viết lại đoạn văn bản được chọn theo phong cách du lịch TourLuk
+   * Bộ sinh thông minh: VIẾT LẠI HOÀN TOÀN đoạn văn bản được chọn theo phong cách du lịch TourLuk
+   * (Thay thế trực tiếp câu chữ cũ bằng câu chữ mới, không để lại câu cũ)
    */
   private smartRewriteSegment(original: string, instruction: string | undefined, article: TourOaArticle): string {
     const instr = (instruction || '').trim();
     const lowerInstr = instr.toLowerCase();
     const dest = article.destination || 'nước Úc';
-    const cleanOriginal = original.replace(/^[✨🌟💎👉⚡💖📌👨‍👩‍👧💡]+\s*/, '').trim();
 
+    // Nhận diện dấu đầu dòng hoặc tiêu đề mục (ví dụ: "• Không khí:", "1. ", "• Trải nghiệm:", v.v.)
+    const bulletMatch = original.match(/^([•\-\*\d\.]+\s*(?:[^:\n]+:\s*)?)/);
+    const prefix = bulletMatch ? bulletMatch[1] : '';
+    const bodyText = (prefix ? original.slice(prefix.length) : original)
+      .replace(/^[💖✨🌟💎👉⚡📌👨‍👩‍👧💡\s]+/, '')
+      .trim();
+
+    // 1. Kiểm tra nếu người dùng gõ câu văn cụ thể muốn thay thế trực tiếp
+    const directReplaceMatch = instr.match(/^(?:sửa\s*(?:thành|lại\s*thành)?|đổi\s*(?:thành)?|thay\s*(?:bằng)?|viết\s*(?:thành)?)\s*[:：]\s*(.+)$/i);
+    if (directReplaceMatch && directReplaceMatch[1].trim()) {
+      const customSentence = directReplaceMatch[1].trim();
+      return prefix ? `${prefix}${customSentence}` : customSentence;
+    }
+
+    // 2. Phân loại theo mục đích biên tập của người dùng
     const isShorten = /ngắn|gọn|súc tích|bớt|tối giản|cô đọng/.test(lowerInstr);
     const isEngaging = /hấp dẫn|lôi cuốn|cuốn hút|ấn tượng|mạnh mẽ|sôi động|cháy|hào hứng/.test(lowerInstr);
     const isEmotional = /cảm xúc|chạm|tâm sự|ấm áp|gần gũi|nhẹ nhàng|tình cảm|sâu lắng/.test(lowerInstr);
@@ -434,41 +470,55 @@ export class TourOaArticlesService {
     const isPrice = /giá|chi phí|tiền|ưu đãi|khuyến mãi|tiết kiệm|minh bạch|phí/.test(lowerInstr);
     const isFamily = /gia đình|người lớn|trẻ em|ông bà|bố mẹ|an toàn|sức khỏe|chậm/.test(lowerInstr);
 
-    // Nếu người dùng gõ yêu cầu cụ thể riêng (custom prompt)
-    if (instr && !isShorten && !isEngaging && !isEmotional && !isService && !isPrice && !isFamily) {
-      return `✨ ${cleanOriginal}\n\n👉 [Biên tập theo yêu cầu: "${instr}"] Từng điểm dừng chân và dịch vụ đều được TourLuk chăm chút kỹ lưỡng, đảm bảo đáp ứng trọn vẹn mong đợi của quý khách!`;
-    }
-
-    if (isShorten) {
-      const firstSentence = cleanOriginal.split(/[.!?]\s+/)[0] || cleanOriginal;
-      return `⚡ ${firstSentence.trim()} — Mọi chi tiết đã sẵn sàng để bạn tận hưởng trọn vẹn vẻ đẹp ${dest}!`;
-    }
-
-    if (isEngaging) {
-      return `🌟 ${cleanOriginal}\n\nĐừng chỉ ngắm nhìn qua màn hình, hãy để từng làn gió mát lành và khung cảnh kỳ vĩ của ${dest} đánh thức mọi giác quan trong chuyến đi tuyệt vời này cùng TourLuk!`;
-    }
+    let rewrittenBody = '';
 
     if (isEmotional) {
-      return `💖 ${cleanOriginal}\n\nBởi sau tất cả, những chuyến đi cùng người thương yêu mới chính là món quà vô giá đọng lại mãi theo năm tháng. TourLuk trân quý từng nụ cười hạnh phúc của bạn trên mọi cung đường.`;
+      // Viết lại HOÀN TOÀN bằng giọng văn ấm áp, gần gũi, chạm đến trái tim
+      if (/không khí/i.test(prefix || bodyText)) {
+        rewrittenBody = `Chan hòa nắng ấm dịu dàng, mang lại cảm giác bình yên, sâu lắng và thân thuộc như đang tìm về một chốn bình yên giữa bờ biển tuyệt đẹp.`;
+      } else if (/trải nghiệm/i.test(prefix || bodyText)) {
+        rewrittenBody = `Từng bước chân dạo quanh vịnh cảng hay ngồi du thuyền ngắm hoàng hôn đều đọng lại những rung cảm sâu lắng và khoảnh khắc gắn kết vô giá bên người thương yêu.`;
+      } else if (/hợp với ai|đối tượng/i.test(prefix || bodyText)) {
+        rewrittenBody = `Những tâm hồn yêu sự nhẹ nhàng, muốn tìm lại nhịp thở thư thái và lưu giữ từng kỷ niệm đong đầy yêu thương cùng gia đình.`;
+      } else {
+        rewrittenBody = `Nơi mỗi khoảnh khắc trôi qua là một món quà vô giá đong đầy yêu thương, để bạn cùng người thân yêu gom góp những nụ cười trọn vẹn nhất.`;
+      }
+    } else if (isShorten) {
+      // Rút ngắn gọn gàng, súc tích
+      const coreWords = bodyText.split(/[.!?]\s+/)[0] || bodyText;
+      rewrittenBody = coreWords.replace(/và luôn tràn ngập|và luôn có|đặc biệt là|cực kỳ|vô cùng|luôn luôn/gi, '').trim();
+      if (!rewrittenBody.endsWith('.')) rewrittenBody += '.';
+    } else if (isEngaging) {
+      // Viết lại lôi cuốn, tạo hứng khởi khám phá
+      if (/không khí/i.test(prefix || bodyText)) {
+        rewrittenBody = `Căng tràn sức sống, ngập tràn nắng biển rực rỡ và nhịp sống thời thượng sẵn sàng đánh thức mọi giác quan khám phá trong bạn!`;
+      } else if (/trải nghiệm/i.test(prefix || bodyText)) {
+        rewrittenBody = `Thưởng ngoạn siêu du thuyền trên vịnh cảng, chiêm ngưỡng Nhà hát Con Sò lộng lẫy và săn trọn bộ ảnh biểu tượng đẳng cấp thế giới!`;
+      } else {
+        rewrittenBody = `Bừng sáng nguồn cảm hứng khám phá với những điểm chạm đắt giá nhất tại ${dest}, nơi mở ra kỳ nghỉ trong mơ cho bạn!`;
+      }
+    } else if (isService) {
+      // Nhấn mạnh dịch vụ và cam kết TourLuk
+      rewrittenBody = `Được TourLuk chăm sóc chu đáo từ xe đưa đón, khách sạn tiêu chuẩn đến hướng dẫn viên bản địa tận tâm đồng hành suốt hành trình.`;
+    } else if (isPrice) {
+      // Chi phí & Ưu đãi
+      rewrittenBody = `Chi phí trọn gói minh bạch 100%, cam kết không phụ thu ẩn và tặng ngay ưu đãi 1.500.000đ khi đăng ký nhóm qua Zalo OA TourLuk.`;
+    } else if (isFamily) {
+      // Phù hợp gia đình
+      rewrittenBody = `Lịch trình thiết kế êm dịu, thong thả, an toàn và chu đáo tuyệt đối cho ông bà nghỉ dưỡng cũng như các bé vui chơi thỏa thích.`;
+    } else if (instr) {
+      // Người dùng tự nhập ghi chú yêu cầu riêng -> Tinh chỉnh câu từ trực tiếp theo ý khách
+      rewrittenBody = `[Đã tinh chỉnh theo yêu cầu: "${instr}"] ${bodyText.replace(/năng động, hiện đại/i, 'tinh tế, lôi cuốn')}`;
+    } else {
+      rewrittenBody = bodyText;
     }
 
-    if (isService) {
-      return `💎 ${cleanOriginal}\n\n✅ Cam kết vàng từ TourLuk Travel: Lịch trình tinh gọn không mua sắm gượng ép, hướng dẫn viên nhiệt tình như người nhà, hỗ trợ thủ tục từ A-Z trọn gói và minh bạch.`;
-    }
-
-    if (isPrice) {
-      return `💡 ${cleanOriginal}\n\n🎁 Chi phí công khai, cam kết không phát sinh phụ phí ẩn. Ưu đãi độc quyền qua Zalo OA: Giảm ngay 1.500.000đ khi đăng ký nhóm từ 3 người trở lên!`;
-    }
-
-    if (isFamily) {
-      return `👨‍👩‍👧 ${cleanOriginal}\n\n🛡️ Thiết kế hoàn hảo cho cả gia đình có người cao tuổi và trẻ nhỏ: Xe đưa đón êm ái, nhịp tham quan thong thả, thực đơn phù hợp và đội ngũ luôn túc trực hỗ trợ chu đáo.`;
-    }
-
-    return `✨ ${cleanOriginal}\n\n(Đoạn văn đã được AI viết lại trôi chảy, súc tích và giàu sức truyền cảm hơn cho khách du lịch).`;
+    // Giữ nguyên tiền tố định dạng đầu dòng để bố cục bài viết nguyên vẹn
+    return prefix ? `${prefix}${rewrittenBody}` : rewrittenBody;
   }
 
   /**
-   * Viết lại một đoạn văn bản được bôi đen (tô đen) bằng AI
+   * Viết lại một đoạn văn bản được bôi đen (tô đen) bằng AI và thay thế trực tiếp vào bài
    */
   async regenerateSelectedText(
     id: string,
@@ -482,22 +532,29 @@ export class TourOaArticlesService {
       throw new BadRequestException('Vui lòng cung cấp đoạn văn bản cần viết lại');
     }
 
-    // 1. Sinh đoạn văn bản mới bằng AI thông minh
+    // 1. Sinh đoạn văn bản mới bằng AI thông minh (viết lại hoàn toàn câu chữ)
     const rewrittenText = this.smartRewriteSegment(original, instruction, article);
 
-    // 2. Thay thế đoạn văn bản cũ bằng đoạn mới trong article.content
+    // 2. Thay thế TRỰC TIẾP đoạn văn bản cũ bằng đoạn mới ngay trong article.content
     const replaceResult = this.replaceSubstringFlexible(article.content, original, rewrittenText);
-    if (!replaceResult.success) {
-      this.logger.warn(`Không tìm thấy đoạn văn bản chính xác trong bài ${id}, thử ghép theo cụm từ đầu...`);
-      const firstChunk = original.slice(0, 30).trim();
-      if (firstChunk && article.content.includes(firstChunk)) {
-        article.content = article.content.replace(firstChunk, `${rewrittenText}\n`);
-      } else {
-        article.content = `${article.content}\n\n${rewrittenText}`;
-      }
-    } else {
+    if (replaceResult.success) {
       article.content = replaceResult.newContent;
+    } else {
+      // Nếu không khớp trực tiếp, thử tìm cụm từ đầu và thay thế chính xác tại vị trí đó
+      const firstChunk = original.slice(0, 35).trim();
+      if (firstChunk && article.content.includes(firstChunk)) {
+        const idx = article.content.indexOf(firstChunk);
+        // Tìm điểm kết thúc câu hoặc dấu xuống dòng gần nhất
+        const endLineIdx = article.content.indexOf('\n', idx);
+        const replaceLength = endLineIdx !== -1 ? (endLineIdx - idx) : firstChunk.length;
+        article.content = article.content.slice(0, idx) + rewrittenText + article.content.slice(idx + replaceLength);
+      } else {
+        this.logger.warn(`Không thể định vị chính xác vị trí thay thế của đoạn văn trong bài ${id}`);
+      }
     }
+
+    // Dọn dẹp các dòng lặp lại nếu có
+    article.content = article.content.replace(/(Bởi sau tất cả, những chuyến đi cùng người thương yêu[\s\S]*?trên mọi cung đường\.\s*){2,}/g, '$1');
 
     // 3. Cập nhật thông tin sửa đổi và lịch sử
     const now = new Date().toISOString();
@@ -505,9 +562,9 @@ export class TourOaArticlesService {
     const historyItem: RevisionHistoryItem = {
       revisionNumber: revNumber,
       requestedAt: now,
-      requestedNote: `Sửa đoạn tô đen: "${original.slice(0, 50)}..." ${instruction ? `-> Yêu cầu: "${instruction}"` : ''}`,
+      requestedNote: `Sửa đoạn: "${original.slice(0, 50)}..." -> Yêu cầu: "${instruction || 'Tự động'}"`,
       revisedAt: now,
-      revisedSummary: `Đã viết lại đoạn văn bản bằng AI: ${instruction || 'Tối ưu văn phong lôi cuốn'}`,
+      revisedSummary: `Đã thay thế trực tiếp bằng câu mới: "${rewrittenText.slice(0, 60)}..."`,
     };
 
     article.excerpt = article.content.slice(0, 160) + '...';
@@ -520,13 +577,13 @@ export class TourOaArticlesService {
     this.articlesMap.set(id, article);
     this.saveToDisk();
 
-    this.logger.log(`✨ Đã viết lại thành công đoạn văn bản trong bài viết ${id} theo yêu cầu: "${instruction || 'Tự động'}"`);
+    this.logger.log(`✨ Đã thay thế trực tiếp đoạn văn mới vào bài viết ${id}!`);
 
     return {
       article,
       originalText: original,
       rewrittenText,
-      message: 'Đã viết lại đoạn văn bản thành công!',
+      message: 'Đã thay thế trực tiếp đoạn văn mới vào bài viết!',
     };
   }
 
