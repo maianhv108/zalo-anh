@@ -80,6 +80,16 @@ export class TourContentController {
     return this.tourOaArticlesService.publishToZaloOa(tourId);
   }
 
+  @Post('articles/:tourId/regenerate-selection')
+  @ApiOperation({ summary: 'Viết lại đoạn văn bản được bôi đen (tô đen) bằng AI' })
+  async regenerateSelection(
+    @Param('tourId') tourId: string,
+    @Body('selectedText') selectedText: string,
+    @Body('instruction') instruction?: string,
+  ) {
+    return this.tourOaArticlesService.regenerateSelectedText(tourId, selectedText, instruction);
+  }
+
   @Post('articles/:tourId/request-revision')
   @ApiOperation({ summary: 'Chị/Admin yêu cầu sửa bài -> Tự động sửa và chuyển sang Chờ duyệt lại' })
   async requestRevision(

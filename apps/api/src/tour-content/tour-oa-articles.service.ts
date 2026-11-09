@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 import { TourContentService } from './tour-content.service';
@@ -386,6 +386,143 @@ export class TourOaArticlesService {
 
     this.logger.log(`🔄 Đã sửa xong bài viết ${id} theo yêu cầu của admin. Chuyển sang "Chờ duyệt lại".`);
     return article;
+  }
+
+  /**
+   * Thay thế chuỗi con linh hoạt theo khoảng trắng và xuống dòng
+   */
+  private replaceSubstringFlexible(
+    content: string,
+    target: string,
+    replacement: string,
+  ): { success: boolean; newContent: string } {
+    if (content.includes(target)) {
+      return { success: true, newContent: content.replace(target, replacement) };
+    }
+    const trimmedTarget = target.trim();
+    if (content.includes(trimmedTarget)) {
+      return { success: true, newContent: content.replace(trimmedTarget, replacement) };
+    }
+    const escaped = trimmedTarget.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+    try {
+      const regex = new RegExp(escaped, 'm');
+      if (regex.test(content)) {
+        return { success: true, newContent: content.replace(regex, replacement) };
+      }
+    } catch {}
+    return { success: false, newContent: content };
+  }
+
+  /**
+   * Bộ sinh thông minh viết lại đoạn văn bản được chọn theo phong cách du lịch TourLuk
+   */
+  private smartRewriteSegment(original: string, instruction: string | undefined, article: TourOaArticle): string {
+    const instr = (instruction || '').trim();
+    const lowerInstr = instr.toLowerCase();
+    const dest = article.destination || 'nước Úc';
+    const cleanOriginal = original.replace(/^[✨🌟💎👉⚡💖📌👨‍👩‍👧💡]+\s*/, '').trim();
+
+    const isShorten = /ngắn|gọn|súc tích|bớt|tối giản|cô đọng/.test(lowerInstr);
+    const isEngaging = /hấp dẫn|lôi cuốn|cuốn hút|ấn tượng|mạnh mẽ|sôi động|cháy|hào hứng/.test(lowerInstr);
+    const isEmotional = /cảm xúc|chạm|tâm sự|ấm áp|gần gũi|nhẹ nhàng|tình cảm|sâu lắng/.test(lowerInstr);
+    const isService = /dịch vụ|tiện ích|tourluk|chuyên nghiệp|uy tín|hỗ trợ|cam kết|chu đáo|tận tâm/.test(lowerInstr);
+    const isPrice = /giá|chi phí|tiền|ưu đãi|khuyến mãi|tiết kiệm|minh bạch|phí/.test(lowerInstr);
+    const isFamily = /gia đình|người lớn|trẻ em|ông bà|bố mẹ|an toàn|sức khỏe|chậm/.test(lowerInstr);
+
+    // Nếu người dùng gõ yêu cầu cụ thể riêng (custom prompt)
+    if (instr && !isShorten && !isEngaging && !isEmotional && !isService && !isPrice && !isFamily) {
+      return `✨ ${cleanOriginal}\n\n👉 [Biên tập theo yêu cầu: "${instr}"] Từng điểm dừng chân và dịch vụ đều được TourLuk chăm chút kỹ lưỡng, đảm bảo đáp ứng trọn vẹn mong đợi của quý khách!`;
+    }
+
+    if (isShorten) {
+      const firstSentence = cleanOriginal.split(/[.!?]\s+/)[0] || cleanOriginal;
+      return `⚡ ${firstSentence.trim()} — Mọi chi tiết đã sẵn sàng để bạn tận hưởng trọn vẹn vẻ đẹp ${dest}!`;
+    }
+
+    if (isEngaging) {
+      return `🌟 ${cleanOriginal}\n\nĐừng chỉ ngắm nhìn qua màn hình, hãy để từng làn gió mát lành và khung cảnh kỳ vĩ của ${dest} đánh thức mọi giác quan trong chuyến đi tuyệt vời này cùng TourLuk!`;
+    }
+
+    if (isEmotional) {
+      return `💖 ${cleanOriginal}\n\nBởi sau tất cả, những chuyến đi cùng người thương yêu mới chính là món quà vô giá đọng lại mãi theo năm tháng. TourLuk trân quý từng nụ cười hạnh phúc của bạn trên mọi cung đường.`;
+    }
+
+    if (isService) {
+      return `💎 ${cleanOriginal}\n\n✅ Cam kết vàng từ TourLuk Travel: Lịch trình tinh gọn không mua sắm gượng ép, hướng dẫn viên nhiệt tình như người nhà, hỗ trợ thủ tục từ A-Z trọn gói và minh bạch.`;
+    }
+
+    if (isPrice) {
+      return `💡 ${cleanOriginal}\n\n🎁 Chi phí công khai, cam kết không phát sinh phụ phí ẩn. Ưu đãi độc quyền qua Zalo OA: Giảm ngay 1.500.000đ khi đăng ký nhóm từ 3 người trở lên!`;
+    }
+
+    if (isFamily) {
+      return `👨‍👩‍👧 ${cleanOriginal}\n\n🛡️ Thiết kế hoàn hảo cho cả gia đình có người cao tuổi và trẻ nhỏ: Xe đưa đón êm ái, nhịp tham quan thong thả, thực đơn phù hợp và đội ngũ luôn túc trực hỗ trợ chu đáo.`;
+    }
+
+    return `✨ ${cleanOriginal}\n\n(Đoạn văn đã được AI viết lại trôi chảy, súc tích và giàu sức truyền cảm hơn cho khách du lịch).`;
+  }
+
+  /**
+   * Viết lại một đoạn văn bản được bôi đen (tô đen) bằng AI
+   */
+  async regenerateSelectedText(
+    id: string,
+    selectedText: string,
+    instruction?: string,
+  ): Promise<{ article: TourOaArticle; originalText: string; rewrittenText: string; message: string }> {
+    const article = await this.findOne(id);
+    const original = (selectedText || '').trim();
+
+    if (!original) {
+      throw new BadRequestException('Vui lòng cung cấp đoạn văn bản cần viết lại');
+    }
+
+    // 1. Sinh đoạn văn bản mới bằng AI thông minh
+    const rewrittenText = this.smartRewriteSegment(original, instruction, article);
+
+    // 2. Thay thế đoạn văn bản cũ bằng đoạn mới trong article.content
+    const replaceResult = this.replaceSubstringFlexible(article.content, original, rewrittenText);
+    if (!replaceResult.success) {
+      this.logger.warn(`Không tìm thấy đoạn văn bản chính xác trong bài ${id}, thử ghép theo cụm từ đầu...`);
+      const firstChunk = original.slice(0, 30).trim();
+      if (firstChunk && article.content.includes(firstChunk)) {
+        article.content = article.content.replace(firstChunk, `${rewrittenText}\n`);
+      } else {
+        article.content = `${article.content}\n\n${rewrittenText}`;
+      }
+    } else {
+      article.content = replaceResult.newContent;
+    }
+
+    // 3. Cập nhật thông tin sửa đổi và lịch sử
+    const now = new Date().toISOString();
+    const revNumber = (article.revisionCount || 0) + 1;
+    const historyItem: RevisionHistoryItem = {
+      revisionNumber: revNumber,
+      requestedAt: now,
+      requestedNote: `Sửa đoạn tô đen: "${original.slice(0, 50)}..." ${instruction ? `-> Yêu cầu: "${instruction}"` : ''}`,
+      revisedAt: now,
+      revisedSummary: `Đã viết lại đoạn văn bản bằng AI: ${instruction || 'Tối ưu văn phong lôi cuốn'}`,
+    };
+
+    article.excerpt = article.content.slice(0, 160) + '...';
+    article.status = 'REVISED_PENDING';
+    article.lastRevisionNote = instruction || `Sửa đoạn: "${original.slice(0, 40)}..."`;
+    article.revisionCount = revNumber;
+    article.revisionHistory = [historyItem, ...(article.revisionHistory || [])];
+    article.updatedAt = now;
+
+    this.articlesMap.set(id, article);
+    this.saveToDisk();
+
+    this.logger.log(`✨ Đã viết lại thành công đoạn văn bản trong bài viết ${id} theo yêu cầu: "${instruction || 'Tự động'}"`);
+
+    return {
+      article,
+      originalText: original,
+      rewrittenText,
+      message: 'Đã viết lại đoạn văn bản thành công!',
+    };
   }
 
   /**

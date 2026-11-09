@@ -119,6 +119,14 @@ export function TourArticleWorkflow() {
   // Xem trước ảnh lớn
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
+  // Trạng thái tô đen đoạn văn bản để AI viết lại (Inline Regenerate)
+  const [highlightedText, setHighlightedText] = useState<string>('');
+  const [selectionCoords, setSelectionCoords] = useState<{ x: number; y: number } | null>(null);
+  const [isRegenModalOpen, setIsRegenModalOpen] = useState(false);
+  const [regenInstruction, setRegenInstruction] = useState('');
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [recentlyRewrittenText, setRecentlyRewrittenText] = useState<string | null>(null);
+
   // Toast thông báo
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(
     null,
@@ -240,6 +248,71 @@ export function TourArticleWorkflow() {
       setNotification({ type: 'error', message: e.message || 'Lỗi khi gửi yêu cầu sửa bài.' });
     } finally {
       setIsActionLoading(false);
+    }
+  };
+
+  // 3.1. Bắt sự kiện bôi đen (tô đen) đoạn văn bản
+  const handleSelectionChange = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed) {
+      return;
+    }
+    const text = selection.toString().trim();
+    if (text.length >= 6) {
+      setHighlightedText(text);
+      try {
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        setSelectionCoords({
+          x: rect.left + rect.width / 2,
+          y: rect.top,
+        });
+      } catch {}
+    }
+  };
+
+  // 3.2. Thao tác viết lại đoạn văn bản được chọn bằng AI
+  const handleRegenerateSelection = async (instructionToUse?: string) => {
+    if (!selectedArticleId || !highlightedText.trim()) {
+      setNotification({ type: 'error', message: 'Vui lòng chọn hoặc tô đen đoạn văn cần sửa.' });
+      return;
+    }
+    const instruction = (instructionToUse || regenInstruction).trim();
+    setIsRegenerating(true);
+    try {
+      const res = await fetchApi<{
+        article: TourOaArticle;
+        originalText: string;
+        rewrittenText: string;
+        message: string;
+      }>(`/tour-content/articles/${selectedArticleId}/regenerate-selection`, {
+        method: 'POST',
+        body: JSON.stringify({
+          selectedText: highlightedText,
+          instruction,
+        }),
+      });
+
+      if (res?.article) {
+        setSelectedArticle(res.article);
+        setRecentlyRewrittenText(res.rewrittenText);
+        setNotification({
+          type: 'success',
+          message: `✨ Đã viết lại thành công đoạn văn bản theo yêu cầu của chị!`,
+        });
+        setIsRegenModalOpen(false);
+        setHighlightedText('');
+        setSelectionCoords(null);
+        setRegenInstruction('');
+        await loadArticles();
+
+        // Xóa hiệu ứng highlight sau 6s
+        setTimeout(() => setRecentlyRewrittenText(null), 6000);
+      }
+    } catch (e: any) {
+      setNotification({ type: 'error', message: e.message || 'Lỗi khi viết lại đoạn văn.' });
+    } finally {
+      setIsRegenerating(false);
     }
   };
 
@@ -668,6 +741,26 @@ export function TourArticleWorkflow() {
                 </div>
               </div>
 
+              {/* THANH HƯỚNG DẪN TÍNH NĂNG TÔ ĐEN SỬA TỰ ĐỘNG BẰNG AI */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 bg-gradient-to-r from-indigo-950/70 via-purple-950/60 to-slate-900 border border-indigo-500/30 rounded-2xl text-xs shadow-md">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-300 animate-pulse shrink-0" />
+                  <span className="text-slate-200 text-xs">
+                    <strong className="text-amber-300">Tính năng Sửa Tự Động (Regenerate):</strong> Chị đọc đoạn nào chưa ưng ý, chỉ cần <strong>dùng chuột bôi đen (tô đen)</strong> đoạn đó trong khung điện thoại để AI viết lại ngay lập tức!
+                  </span>
+                </div>
+                {highlightedText && (
+                  <Button
+                    size="sm"
+                    onClick={() => setIsRegenModalOpen(true)}
+                    className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-black text-xs h-8 px-3.5 shadow-lg shadow-red-600/30 shrink-0 gap-1.5 animate-bounce"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+                    <span>Sửa Đoạn Đã Chọn ({highlightedText.length} ký tự)</span>
+                  </Button>
+                )}
+              </div>
+
               {/* BẢN XEM TRƯỚC DEMO TRÊN ZALO OA (ZALO OA MOBILE SIMULATOR) */}
               <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
                 {/* KHUNG ĐIỆN THOẠI DI ĐỘNG DEMO (7 CỘT) */}
@@ -705,7 +798,11 @@ export function TourArticleWorkflow() {
                       </div>
 
                       {/* Nội dung bài viết cuộn được */}
-                      <div className="flex-1 overflow-y-auto p-4 space-y-3.5 text-left text-xs text-slate-200">
+                      <div
+                        onMouseUp={handleSelectionChange}
+                        onTouchEnd={handleSelectionChange}
+                        className="flex-1 overflow-y-auto p-4 space-y-3.5 text-left text-xs text-slate-200 select-text"
+                      >
                         {/* Ảnh bìa Hero Cover từ Google Drive */}
                         <div className="rounded-xl overflow-hidden border border-slate-800 shadow-md bg-slate-900 relative group">
                           {selectedArticle.coverImage?.thumbnailUrl ? (
@@ -890,6 +987,112 @@ export function TourArticleWorkflow() {
 
                 {/* THÔNG TIN TIÊU CHÍ GOOGLE SHEET & LỊCH SỬ SỬA ĐỔI (5 CỘT) */}
                 <div className="md:col-span-5 space-y-3.5">
+                  {/* CARD SỬA TỰ ĐỘNG BẰNG AI (REGENERATE THEO ĐOẠN TÔ ĐEN) */}
+                  <Card className="bg-gradient-to-br from-[#121b36] to-[#0a1024] border-indigo-500/40 p-4 text-white shadow-2xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-28 h-28 bg-rose-500/10 rounded-full blur-2xl pointer-events-none" />
+                    <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-indigo-500/20">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-amber-500 to-rose-500 flex items-center justify-center shadow-md">
+                          <Sparkles className="w-3.5 h-3.5 text-white animate-spin" />
+                        </div>
+                        <h4 className="text-xs font-black text-white uppercase tracking-wider">
+                          Sửa Tự Động Đoạn Văn (AI Regenerate)
+                        </h4>
+                      </div>
+                      <span className="text-[9px] bg-rose-500/20 text-rose-300 border border-rose-500/40 px-2 py-0.5 rounded-full font-bold">
+                        Tô Đen & Viết Lại
+                      </span>
+                    </div>
+
+                    {highlightedText ? (
+                      <div className="space-y-3">
+                        <div className="p-2.5 bg-slate-900/90 rounded-xl border border-indigo-500/30 space-y-1">
+                          <div className="flex items-center justify-between text-[10px] text-slate-400">
+                            <span className="font-bold text-amber-300">Đoạn văn chị đã chọn ({highlightedText.length} ký tự):</span>
+                            <button
+                              onClick={() => {
+                                setHighlightedText('');
+                                setSelectionCoords(null);
+                              }}
+                              className="text-slate-400 hover:text-rose-400"
+                            >
+                              ✕ Bỏ chọn
+                            </button>
+                          </div>
+                          <p className="text-[11px] text-amber-100 italic line-clamp-3 leading-relaxed">
+                            "{highlightedText}"
+                          </p>
+                        </div>
+
+                        {/* Gợi ý yêu cầu sửa nhanh */}
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-bold block mb-1">
+                            Chọn nhanh hướng sửa chị muốn:
+                          </label>
+                          <div className="flex flex-wrap gap-1.5">
+                            {[
+                              { label: '⚡ Viết hấp dẫn hơn', val: 'Viết hấp dẫn, lôi cuốn và tạo hứng khởi du lịch' },
+                              { label: '✂️ Rút ngắn gọn', val: 'Rút ngắn gọn, súc tích và dễ đọc' },
+                              { label: '💖 Thêm cảm xúc', val: 'Thêm cảm xúc ấm áp, gần gũi và sâu lắng' },
+                              { label: '💎 Tiện ích TourLuk', val: 'Nhấn mạnh dịch vụ và cam kết uy tín của TourLuk' },
+                              { label: '💡 Thêm giá & ưu đãi', val: 'Bổ sung giá tour minh bạch và ưu đãi Zalo OA' },
+                              { label: '👨‍👩‍👧 Phù hợp gia đình', val: 'Phù hợp gia đình có người lớn tuổi và trẻ nhỏ' },
+                            ].map((chip, idx) => (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => handleRegenerateSelection(chip.val)}
+                                disabled={isRegenerating}
+                                className="px-2 py-1 rounded-lg bg-indigo-950/60 hover:bg-indigo-900 border border-indigo-500/30 text-indigo-200 text-[10px] font-medium transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+                              >
+                                {chip.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Ô nhập yêu cầu chỉnh sửa riêng */}
+                        <div className="space-y-1.5">
+                          <input
+                            type="text"
+                            value={regenInstruction}
+                            onChange={(e) => setRegenInstruction(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleRegenerateSelection()}
+                            placeholder="Hoặc gõ yêu cầu cụ thể (vd: vui hơn, nhấn mạnh visa...)"
+                            className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                          />
+                          <Button
+                            size="sm"
+                            onClick={() => handleRegenerateSelection()}
+                            disabled={isRegenerating}
+                            className="w-full bg-gradient-to-r from-red-600 via-rose-600 to-indigo-600 hover:from-red-500 hover:to-indigo-500 text-white font-black text-xs h-8 shadow-md shadow-red-600/30 gap-1.5"
+                          >
+                            <Sparkles className={`w-3.5 h-3.5 ${isRegenerating ? 'animate-spin' : ''}`} />
+                            <span>{isRegenerating ? 'Đang viết lại đoạn văn...' : '🚀 Viết Lại Đoạn Này Ngay (Regenerate)'}</span>
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5 text-xs text-slate-300">
+                        <p className="text-[11px] text-slate-400 leading-relaxed">
+                          💡 <strong>Cách dùng siêu dễ:</strong> Chị đọc bài viết trong khung điện thoại bên cạnh, thấy câu hay đoạn nào chưa ưng ý chỉ cần <strong>dùng chuột tô đen</strong>, công cụ AI sẽ nhận diện ngay để viết lại theo ý chị!
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setHighlightedText(selectedArticle.hook || selectedArticle.title);
+                            setIsRegenModalOpen(true);
+                          }}
+                          className="w-full text-xs border-indigo-500/40 bg-indigo-950/40 text-indigo-300 hover:bg-indigo-900/60 font-bold gap-1.5"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>Thử Viết Lại Đoạn Mở Đầu (Hook)</span>
+                        </Button>
+                      </div>
+                    )}
+                  </Card>
+
                   {/* Card thông số từ Google Sheet */}
                   <Card className="bg-[#0b1329]/80 border-slate-800 p-4 text-white shadow-xl">
                     <h4 className="text-xs font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-1.5 pb-2.5 border-b border-slate-800">
@@ -1129,6 +1332,143 @@ export function TourArticleWorkflow() {
                 className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs"
               >
                 {isActionLoading ? 'Đang Lưu...' : 'Lưu Thay Đổi'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 🌟 NÚT NỔI (FLOATING PILL) KHI BÔI ĐEN ĐOẠN VĂN BẢN TRONG BÀI VIẾT */}
+      {/* ========================================================================= */}
+      {highlightedText && !isRegenModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            left: `${Math.min(Math.max(selectionCoords?.x || 200, 160), typeof window !== 'undefined' ? window.innerWidth - 180 : 500)}px`,
+            top: `${Math.max((selectionCoords?.y || 160) - 48, 15)}px`,
+            transform: 'translateX(-50%)',
+            zIndex: 9999,
+          }}
+          className="animate-in fade-in zoom-in-95 duration-150"
+        >
+          <button
+            onClick={() => setIsRegenModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-red-600 via-rose-600 to-indigo-600 text-white text-xs font-black shadow-2xl hover:scale-105 active:scale-95 transition-all border-2 border-white/50 shadow-red-600/50 backdrop-blur-md cursor-pointer"
+          >
+            <Sparkles className="w-4 h-4 text-amber-300 animate-spin" />
+            <span>✨ Sửa đoạn tô đen này bằng AI</span>
+          </button>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 🌟 MODAL: SỬA TỰ ĐỘNG ĐOẠN VĂN BẢN ĐƯỢC CHỌN (AI REGENERATE) */}
+      {/* ========================================================================= */}
+      {isRegenModalOpen && selectedArticle && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0e1629] border border-indigo-500/40 rounded-2xl w-full max-w-lg p-5 text-white shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-amber-500 to-rose-500 flex items-center justify-center shadow-md">
+                  <Sparkles className="w-4 h-4 text-white animate-spin" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-white">Sửa Tự Động Đoạn Văn Bằng AI (Regenerate)</h3>
+                  <p className="text-[10px] text-slate-400">
+                    Đang sửa cho bài: {selectedArticle.id} - {selectedArticle.title}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setIsRegenModalOpen(false);
+                  setHighlightedText('');
+                  setSelectionCoords(null);
+                }}
+                className="text-slate-400 hover:text-white text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3.5 text-xs">
+              {/* Đoạn trích văn bản đang chọn */}
+              <div className="p-3 bg-slate-900/90 rounded-xl border border-indigo-500/30 space-y-1">
+                <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider block">
+                  Đoạn văn chị đã chọn ({highlightedText.length} ký tự):
+                </span>
+                <p className="text-xs text-amber-100 italic leading-relaxed font-serif max-h-32 overflow-y-auto">
+                  "{highlightedText}"
+                </p>
+              </div>
+
+              {/* Gợi ý yêu cầu sửa nhanh */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-300 block mb-1.5">
+                  Chọn nhanh hướng sửa chị muốn:
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { label: '⚡ Viết hấp dẫn, lôi cuốn hơn', val: 'Viết hấp dẫn, lôi cuốn và tạo hứng khởi du lịch' },
+                    { label: '✂️ Rút ngắn gọn, súc tích', val: 'Rút ngắn gọn, súc tích và dễ đọc' },
+                    { label: '💖 Thêm cảm xúc & gần gũi', val: 'Thêm cảm xúc ấm áp, gần gũi và sâu lắng' },
+                    { label: '💎 Tiện ích TourLuk uy tín', val: 'Nhấn mạnh dịch vụ và cam kết uy tín của TourLuk' },
+                    { label: '💡 Thêm giá & ưu đãi Zalo OA', val: 'Bổ sung giá tour minh bạch và ưu đãi Zalo OA' },
+                    {
+                      label: '👨‍👩‍👧 Phù hợp gia đình & người lớn tuổi',
+                      val: 'Phù hợp gia đình có người lớn tuổi và trẻ nhỏ',
+                    },
+                  ].map((chip, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleRegenerateSelection(chip.val)}
+                      disabled={isRegenerating}
+                      className="px-2.5 py-1.5 rounded-xl bg-slate-900/80 hover:bg-indigo-950 border border-slate-700/80 hover:border-indigo-500/50 text-slate-200 hover:text-white text-[11px] text-left transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Ô gõ yêu cầu riêng */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-300 block mb-1">
+                  Hoặc nhập yêu cầu chỉnh sửa riêng:
+                </label>
+                <textarea
+                  rows={2}
+                  value={regenInstruction}
+                  onChange={(e) => setRegenInstruction(e.target.value)}
+                  placeholder="Ví dụ: viết hài hước hơn, đổi câu mở đầu, nhắc lưu ý về thời tiết lạnh..."
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setIsRegenModalOpen(false);
+                  setHighlightedText('');
+                  setSelectionCoords(null);
+                }}
+                className="text-xs border-slate-700 text-slate-400"
+              >
+                Hủy Bỏ
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => handleRegenerateSelection()}
+                disabled={isRegenerating || !highlightedText.trim()}
+                className="bg-gradient-to-r from-red-600 via-rose-600 to-indigo-600 hover:from-red-500 hover:to-indigo-500 text-white font-black text-xs gap-1.5 shadow-lg shadow-red-600/30"
+              >
+                <Sparkles className={`w-3.5 h-3.5 ${isRegenerating ? 'animate-spin' : ''}`} />
+                <span>{isRegenerating ? 'Đang Viết Lại...' : '🚀 Viết Lại Đoạn Này Ngay'}</span>
               </Button>
             </div>
           </div>
