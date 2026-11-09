@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   FileSpreadsheet,
   HardDrive,
@@ -23,6 +24,7 @@ import {
   Filter,
   Layers,
   Image as ImageIcon,
+  ScrollText,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -118,6 +120,7 @@ interface GoogleStatus {
 }
 
 export function TourContentManager() {
+  const router = useRouter();
   const [status, setStatus] = useState<GoogleStatus | null>(null);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
@@ -466,6 +469,29 @@ export function TourContentManager() {
           </div>
         )}
       </Card>
+
+      {/* BANNER ĐIỀU HƯỚNG NHANH ĐẾN 12 BÀI VIẾT HOÀN CHỈNH */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-indigo-600 text-white shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-red-500/40">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-amber-300 animate-pulse" />
+            <h4 className="font-black text-sm text-white">
+              Đã soạn sẵn 12 Bài Viết Hoàn Chỉnh từ Google Sheet & Đính kèm Ảnh Drive!
+            </h4>
+          </div>
+          <p className="text-xs text-rose-100">
+            Màn hình hiện tại là <strong>Kế hoạch sơ bộ</strong>. Để đọc bài viết đầy đủ từng câu chữ, xem mô phỏng điện thoại Zalo OA và bấm Duyệt đăng bài, chị bấm nút bên cạnh nhé!
+          </p>
+        </div>
+        <Button
+          onClick={() => router.push('/posts?tab=workflow')}
+          className="bg-white text-rose-700 hover:bg-rose-50 font-black text-xs shadow-lg shrink-0 gap-1.5 h-10 px-4"
+        >
+          <ScrollText className="w-4 h-4 text-rose-600" />
+          <span>Sang Tab Duyệt 12 Bài Viết</span>
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+      </div>
 
       {/* 2. KHU VỰC DANH SÁCH TOUR & CHI TIẾT ĐỀ XUẤT ẢNH (MASTER-DETAIL LAYOUT) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
