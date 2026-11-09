@@ -225,7 +225,8 @@ export class TourOaArticlesService {
     this.logger.log(`✅ Đã DUYỆT thành công bài viết ${id}. Chuyển sang danh mục "Đã duyệt đăng bài".`);
 
     // Tự động xuất bản lên Zalo OA nếu có cấu hình Access Token
-    if (process.env.ZALO_OA_ACCESS_TOKEN) {
+    const activeToken = this.getValidAccessToken();
+    if (activeToken) {
       try {
         await this.publishToZaloOa(id);
       } catch (pubErr: any) {
@@ -240,16 +241,23 @@ export class TourOaArticlesService {
    * Lấy Access Token hợp lệ từ file lưu trữ hoặc môi trường
    */
   private getValidAccessToken(): string {
-    try {
-      const tokenPath = path.resolve('data/zalo-oa-token.json');
-      if (fs.existsSync(tokenPath)) {
-        const raw = fs.readFileSync(tokenPath, 'utf8');
-        const tokenObj = JSON.parse(raw);
-        if (tokenObj.accessToken) {
-          return tokenObj.accessToken;
+    const candidatePaths = [
+      path.resolve('data/zalo-oa-token.json'),
+      path.resolve('apps/api/data/zalo-oa-token.json'),
+      path.resolve(__dirname, '../../../data/zalo-oa-token.json'),
+      path.resolve(__dirname, '../../data/zalo-oa-token.json'),
+    ];
+    for (const p of candidatePaths) {
+      try {
+        if (fs.existsSync(p)) {
+          const raw = fs.readFileSync(p, 'utf8');
+          const tokenObj = JSON.parse(raw);
+          if (tokenObj.accessToken) {
+            return tokenObj.accessToken;
+          }
         }
-      }
-    } catch {}
+      } catch {}
+    }
     return process.env.ZALO_OA_ACCESS_TOKEN || '';
   }
 

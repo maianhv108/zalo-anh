@@ -726,19 +726,19 @@ export function TourArticleWorkflow() {
                     </Button>
                   )}
 
-                  {/* Nút Duyệt Bài Này */}
+                  {/* Nút Duyệt & Đăng lên Zalo OA */}
                   <Button
                     size="sm"
                     onClick={() => handleApprove(selectedArticle.id)}
                     disabled={isActionLoading || selectedArticle.status === 'APPROVED'}
-                    className={`text-xs font-bold shadow-lg ${
+                    className={`text-xs font-bold shadow-lg transition-all ${
                       selectedArticle.status === 'APPROVED'
                         ? 'bg-emerald-800/60 text-emerald-200 cursor-not-allowed'
-                        : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30'
+                        : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30 hover:scale-105 active:scale-95'
                     }`}
                   >
                     <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
-                    {selectedArticle.status === 'APPROVED' ? 'Đã Duyệt Bài Này' : 'Duyệt Bài Này'}
+                    {selectedArticle.status === 'APPROVED' ? '✅ Đã Duyệt Bài Này' : '🚀 Duyệt & Đăng Lên Zalo OA'}
                   </Button>
                 </div>
               </div>
