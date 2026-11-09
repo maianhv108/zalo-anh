@@ -1,7 +1,7 @@
 /**
  * Dữ liệu và kịch bản biên soạn nội dung Zalo OA chuẩn 100% theo Google Sheet & Google Drive
  * Bám sát định vị "Úc Dễ Hiểu Cùng TourLuk", từng đối tượng khách hàng và điểm đến.
- * Tùy độ dài bài viết để bố trí 1 ảnh (bài ngắn) hoặc 2-3 ảnh (bài dài) xen kẽ trong thân bài.
+ * Tích hợp hệ thống tour thực tế từ website TourLuk: https://tourluk.com/au/ và Hotline: 0819 190 101.
  */
 
 export interface ArticleBlueprint {
@@ -41,8 +41,8 @@ export const TOUR_ARTICLE_BLUEPRINTS: Record<string, ArticleBlueprint> = {
         imageCaption: `Không gian phố cổ The Rocks cổ kính với những quán cà phê ngập tràn nắng ấm.`,
       },
       {
-        heading: `🎯 ĐỒNG HÀNH TOÀN DIỆN CHO MỌI CHẶNG ĐƯỜNG:`,
-        text: `Dù bạn khởi hành từ Hà Nội, TP.HCM hay cần dịch vụ đón trả tận nơi tại Sydney, Melbourne, Brisbane hay Perth – TourLuk luôn có giải pháp tour linh hoạt, phù hợp hoàn hảo với mong muốn của bạn và gia đình.`,
+        heading: `🎯 HỆ THỐNG TOUR ĐA DẠNG CHO MỌI NHU CẦU:`,
+        text: `Dù bạn khởi hành từ Hà Nội, TP.HCM hay cần dịch vụ đón trả tận nơi tại Sydney, Melbourne, Brisbane hay Perth – TourLuk luôn có giải pháp tour linh hoạt, phù hợp hoàn hảo với mong muốn của bạn và gia đình:\n\n• Tour ghép trong ngày tiện lợi xuất phát từ Sydney (https://tourluk.com/au/tour-ghep-trong-ngay-tu-sydney/) và Melbourne (https://tourluk.com/au/tour-ghep-trong-ngay-tu-melbourne/) dành cho khách muốn đi tự do kết hợp tham quan.\n• Tour riêng thiết kế theo yêu cầu (https://tourluk.com/au/tour-rieng-tai-uc/) mang lại sự riêng tư tối đa cho đại gia đình.\n• Các hành trình trọn gói 4 đến 14 ngày kết nối những danh thắng biểu tượng nhất của nước Úc.`,
       },
     ],
     cta: `NHẬN TƯ VẤN LỊCH TRÌNH VÀ BÁO GIÁ ƯU ĐÃI MIỄN PHÍ`,
@@ -77,6 +77,10 @@ export const TOUR_ARTICLE_BLUEPRINTS: Record<string, ArticleBlueprint> = {
       {
         heading: `👗 4. THỜI TIẾT & CHỌN TRANG PHỤC THÔNG MINH`,
         text: `Do nằm ở Nam bán cầu, các mùa trong năm tại Úc hoàn toàn trái ngược với Việt Nam. Để chuyến đi luôn thoải mái, bạn nên áp dụng phong cách mặc nhiều lớp nhẹ nhàng như áo thun kết hợp cùng áo cardigan mỏng và áo khoác gió. Cách phối đồ này vừa giúp bạn dễ dàng thích ứng với sự chênh lệch nhiệt độ giữa ngày và đêm, vừa lên hình rất thời trang và thanh lịch.`,
+      },
+      {
+        heading: `🌟 GỢI Ý TOUR PHÙ HỢP CHO NGƯỜI ĐI LẦN ĐẦU:`,
+        text: `Nếu bạn đi Úc lần đầu và muốn có người đồng hành hỗ trợ ngôn ngữ, phiên dịch và di chuyển, hãy tham khảo các gói Tour ghép tại Úc (https://tourluk.com/au/tour-ghep-tai-uc/) đón tại trung tâm Sydney và Melbourne. Lịch trình được bố trí vừa vặn, không lo lạc đường và giúp bạn tận hưởng trọn vẹn những điểm nhấn đặc sắc nhất của nước Úc.`,
       },
     ],
     cta: `LƯU LẠI CHECKLIST & NHẬN HỖ TRỢ TƯ VẤN TỪ CHUYÊN VIÊN TOURLUK`,
@@ -114,6 +118,10 @@ export const TOUR_ARTICLE_BLUEPRINTS: Record<string, ArticleBlueprint> = {
         heading: `💬 CHIA SẺ TỪ ANH HOÀNG SAU TOUR:`,
         text: `"Điều làm tôi hài lòng nhất là TourLuk hiểu rất rõ sức khỏe của người lớn tuổi. Xe đưa đón tận cửa, không phải leo dốc hay đi bộ quá 15 phút một lần. Bố mẹ tôi về khen mãi chuyến đi nhẹ nhàng, khỏe khoắn!"`,
       },
+      {
+        heading: `🗺️ LỊCH TRÌNH THỰC TẾ GỢI Ý CHO GIA ĐÌNH BẠN TẠI SYDNEY:`,
+        text: `Nếu gia đình bạn muốn có một chuyến du ngoạn Sydney trọn gói và thảnh thơi tương tự, hãy tham khảo:\n• Tour Sydney 5 ngày 4 đêm – Chinh phục Blue Mountains và thủ đô Canberra (https://tourluk.com/au/sydney-va-canberra/)\n• Hoặc lựa chọn các gói Tour riêng trong ngày từ Sydney (https://tourluk.com/au/tour-rieng-trong-ngay-tu-sydney/) được tinh chỉnh riêng theo thể lực của bố mẹ và các cháu nhỏ.`,
+      },
     ],
     cta: `XEM LỊCH TRÌNH CHI TIẾT TOUR SYDNEY THIẾT KẾ RIÊNG CHO GIA ĐÌNH`,
     hashtags: ['TourLuk', 'SydneyFamilyTour', 'DuLichSydney', 'TourGiaDinh', 'NhaHatConSo'],
@@ -147,8 +155,8 @@ export const TOUR_ARTICLE_BLUEPRINTS: Record<string, ArticleBlueprint> = {
         imageCaption: `Kỳ quan thiên nhiên 12 Vị Tông Đồ (12 Apostles) sừng sững bên bờ sóng bạc đầu tại Victoria.`,
       },
       {
-        heading: `👉 LỰA CHỌN TỐI ƯU NHẤT CHO KỲ NGHỈ CỦA BẠN:`,
-        text: `Nếu bạn có khoảng thời gian từ bảy đến tám ngày, giải pháp trọn vẹn nhất là chọn hành trình liên tuyến Sydney - Melbourne của TourLuk. Chuyến đi sẽ giúp bạn thưởng thức trọn vẹn cả hai sắc thái đối lập mà vô cùng cuốn hút của nước Úc, từ nét hiện đại rực rỡ bên vịnh biển đến chiều sâu văn hóa cổ điển đầy chất thơ.`,
+        heading: `👉 GỢI Ý CÁC TOUR THỰC TẾ ĐANG ĐƯỢC YÊU THÍCH TẠI TOURLUK:`,
+        text: `Để trải nghiệm trọn vẹn từng thành phố theo đúng sở thích của mình, bạn có thể tham khảo các gói tour thực tế đang mở bán của TourLuk:\n• Khám phá Sydney: Tour Sydney 5N4Đ – Chinh phục Blue Mountains và Canberra (https://tourluk.com/au/sydney-va-canberra/)\n• Khám phá Melbourne: Tour Melbourne 4N3Đ – Great Ocean Road và đảo Phillip (https://tourluk.com/au/melbourne-gor-phillip/) hoặc Tour Melbourne 5N4Đ – Dấu ấn vàng Ballarat tại Great Ocean Road (https://tourluk.com/au/melbourne-5n-gor-ballarat/)\n• Nếu bạn có từ 7 đến 8 ngày, lựa chọn tuyệt vời nhất là hành trình liên tuyến Sydney - Melbourne kết hợp trọn vẹn cả hai phong vị.`,
       },
     ],
     cta: `NHẬN BẢNG SO SÁNH CHI PHÍ VÀ LỊCH TRÌNH LIÊN TUYẾN SYDNEY - MELBOURNE`,
@@ -177,8 +185,8 @@ export const TOUR_ARTICLE_BLUEPRINTS: Record<string, ArticleBlueprint> = {
         imageCaption: `Bãi biển Surfers Paradise dài ngút ngàn với những đợt sóng bạc đầu và nắng vàng quanh năm.`,
       },
       {
-        heading: `💡 LỊCH TRÌNH GỢI Ý ĐỂ TẬN HƯỞNG TRỌN VẸN:`,
-        text: `Hành trình lý tưởng nhất là bốn ngày ba đêm hoặc năm ngày bốn đêm. Bạn nên chọn khách sạn lưu trú tại Gold Coast để tiện cho việc tắm biển và vui chơi tại các công viên giải trí, sau đó dành trọn vẹn một ngày dạo quanh khám phá vẻ đẹp yên bình của Brisbane trước khi lên máy bay trở về.`,
+        heading: `💡 LỊCH TRÌNH THỰC TẾ GỢI Ý TỪ TOURLUK:`,
+        text: `Để tận hưởng trọn vẹn vẻ đẹp của Queensland, TourLuk gợi ý các chương trình thực tế phù hợp cho cả gia đình:\n• Tour Brisbane 7 ngày 6 đêm – Thiên đường đảo ngọc Queensland (https://tourluk.com/au/brisbane-cairns-bc7b/)\n• Các gói Tour ghép trong ngày từ Brisbane (https://tourluk.com/au/tour-ghep-trong-ngay-tu-brisbane/) với xe đưa đón chu đáo tận nơi, tiện lợi cho du khách nghỉ dưỡng tự do kết hợp tham quan.`,
       },
     ],
     cta: `XEM GÓI TOUR QUEENSLAND MAY ĐO CHO GIA ĐÌNH CÓ TRẺ EM`,
@@ -207,8 +215,8 @@ export const TOUR_ARTICLE_BLUEPRINTS: Record<string, ArticleBlueprint> = {
         imageCaption: `Khung cảnh bình yên của bến du thuyền Fremantle và vùng biển xanh thẳm miền Tây Úc.`,
       },
       {
-        heading: `📌 ĐIỂM CỘNG LỚN KHI CHỌN KHÁM PHÁ PERTH:`,
-        text: `Perth có múi giờ hoàn toàn trùng khớp hoặc chỉ lệch một tiếng so với Việt Nam, đi kèm thời tiết khô ráo và khí hậu trong lành quanh năm. Du khách sẽ không gặp phải cảm giác mệt mỏi vì lệch múi giờ, rất thích hợp cho những ai muốn một chuyến đi nghỉ dưỡng thực sự để tái tạo năng lượng.`,
+        heading: `📌 GỢI Ý CÁC TOUR TÂY ÚC THỰC TẾ TỪ TOURLUK:`,
+        text: `Bạn có thể dễ dàng tham gia các hành trình khám phá Tây Úc được TourLuk tổ chức định kỳ:\n• Tour Perth 4 ngày – Hành trình dọc bờ Tây Úc (https://tourluk.com/au/tour-perth-4n-mm4b/)\n• Tour Perth 5 ngày 4 đêm – Fremantle, Margaret River, Busselton Jetty & Đảo Rottnest Bike (https://tourluk.com/au/perth-margaret-river-rottnest-bike/)\n• Tour Perth 3 ngày 2 đêm – Biển, rượu và bình yên (https://tourluk.com/au/tour-perth-3-ngay-2-dem/) dành cho kỳ nghỉ ngắn ngày thư thái.`,
       },
     ],
     cta: `NHẬN LỊCH TRÌNH TOUR PERTH 4N3Đ TRỌN GÓI VÀ ĐẶT CHỖ SỚM`,
@@ -240,6 +248,10 @@ export const TOUR_ARTICLE_BLUEPRINTS: Record<string, ArticleBlueprint> = {
         heading: `🍲 3. BỮA ĂN HỢP KHẨU VỊ VÀ ẤM CÚNG`,
         text: `Thực đơn trong suốt chuyến đi được cân đối hài hòa và chu đáo. Những bữa cơm thuần Việt với canh nóng, rau xanh thơm ngon hợp khẩu vị của ông bà sẽ được đan xen khéo léo cùng các bữa tiệc hải sản tươi sống và bít tết bò Úc trứ danh, đảm bảo cả nhà đều có những trải nghiệm ẩm thực trọn vẹn và ngon miệng.`,
       },
+      {
+        heading: `👨‍👩‍👧‍👦 DỊCH VỤ TOUR RIÊNG MAY ĐO TẠI TOURLUK:`,
+        text: `Để đảm bảo sự riêng tư và linh hoạt tuyệt đối cho gia đình, bạn có thể tham khảo dịch vụ Tour riêng tại Úc (https://tourluk.com/au/tour-rieng-tai-uc/) hoặc Tour riêng nhiều ngày (https://tourluk.com/au/tour-uc-rieng-nhieu-ngay/). Lịch trình và giờ giấc khởi hành hàng ngày hoàn toàn do gia đình bạn quyết định dưới sự hỗ trợ tận tâm của đội ngũ TourLuk.`,
+      },
     ],
     cta: `TƯ VẤN LỊCH TRÌNH RIÊNG CHO ĐOÀN GIA ĐÌNH CỦA BẠN`,
     hashtags: ['TourLuk', 'TourGiaDinhNhieuTheHe', 'DuLichCungOngBa', 'DuLichUcAnToan'],
@@ -262,13 +274,13 @@ export const TOUR_ARTICLE_BLUEPRINTS: Record<string, ArticleBlueprint> = {
       },
       {
         heading: `🌟 CÁC GÓI TOUR LINH HOẠT KHỞI HÀNH TẠI ÚC:`,
-        text: `TourLuk mang đến các gói tour trong ngày vô cùng tiện lợi, đón trả tận nơi tại trung tâm Sydney, Melbourne hay Brisbane. Buổi sáng ba mẹ được đưa đi thưởng ngoạn danh lam thắng cảnh, chiều tối xe đưa về tận nhà an toàn và ấm áp.\n\nVào dịp cuối tuần, các hành trình ngắn ngày sẽ đưa gia đình đến những kỳ quan nổi tiếng như dãy Blue Mountains kỳ vĩ, cung đường Great Ocean Road hay đảo Phillip ngắm chim cánh cụt về tổ. Đội ngũ hướng dẫn viên người Việt luôn tận tâm chăm sóc từng bữa ăn, nhắc ba mẹ uống nước giữ ấm và chụp ảnh cập nhật liên tục, giúp bạn hoàn toàn an tâm làm việc.`,
+        text: `TourLuk mang đến các gói Tour ghép trong ngày (https://tourluk.com/au/tour-uc-ghep-trong-ngay/) và Tour riêng trong ngày (https://tourluk.com/au/tour-uc-rieng-trong-ngay/) vô cùng tiện lợi, đón trả tận nơi tại trung tâm Sydney, Melbourne hay Brisbane. Buổi sáng ba mẹ được đưa đi thưởng ngoạn danh lam thắng cảnh, chiều tối xe đưa về tận nhà an toàn và ấm áp.\n\nVào dịp cuối tuần, các hành trình ngắn ngày sẽ đưa gia đình đến những kỳ quan nổi tiếng như dãy Blue Mountains kỳ vĩ, cung đường Great Ocean Road hay đảo Phillip ngắm chim cánh cụt về tổ. Đội ngũ hướng dẫn viên người Việt luôn tận tâm chăm sóc từng bữa ăn, nhắc ba mẹ uống nước giữ ấm và chụp ảnh cập nhật liên tục, giúp bạn hoàn toàn an tâm làm việc.`,
         imageIndex: 1,
         imageCaption: `Điểm ngắm cảnh thiên nhiên trong lành với đội ngũ hướng dẫn viên người Việt đồng hành chu đáo.`,
       },
       {
         heading: `📲 ĐẶT TOUR DỄ DÀNG NGAY TẠI ÚC HOẶC VIỆT NAM:`,
-        text: `Bạn có thể thanh toán linh hoạt bằng tài khoản ngân hàng Úc qua PayID hoặc chuyển khoản ngân hàng Việt Nam. Mọi thông tin lịch trình và xác nhận đặt chỗ đều được đội ngũ tư vấn hỗ trợ nhanh chóng qua Zalo.`,
+        text: `Bạn có thể thanh toán linh hoạt bằng tài khoản ngân hàng Úc qua PayID hoặc chuyển khoản ngân hàng Việt Nam. Mọi thông tin lịch trình và xác nhận đặt chỗ đều được đội ngũ tư vấn hỗ trợ nhanh chóng qua Zalo hoặc Hotline 0819 190 101.`,
       },
     ],
     cta: `XEM DANH SÁCH DAY TOUR KHỞI HÀNH TẠI SYDNEY & MELBOURNE`,
@@ -297,8 +309,8 @@ export const TOUR_ARTICLE_BLUEPRINTS: Record<string, ArticleBlueprint> = {
         imageCaption: `Khu chợ trời cuối tuần truyền thống tấp nập du khách chọn quà lưu niệm và đặc sản địa phương.`,
       },
       {
-        heading: `📍 CÁC KHU CHỢ NỔI TIẾNG NÊN GHÉ:`,
-        text: `Bạn có thể dành thời gian dạo bước tại Chợ Nông sản Queen Victoria Market lâu đời ở Melbourne, ghé thăm Chợ phiên cuối tuần The Rocks tại Sydney, hoặc trải nghiệm thưởng thức hàu tươi sống với giá chỉ hai đô Úc một con tại Chợ South Melbourne nhộn nhịp.`,
+        heading: `📍 GỢI Ý TOUR TRẢI NGHIỆM ẨM THỰC & RƯỢU VANG THỰC TẾ:`,
+        text: `Nếu bạn yêu thích nét văn hóa ẩm thực và thưởng ngoạn điền trang rượu vang đẳng cấp, hãy trải nghiệm:\n• Tour Melbourne 5 ngày 4 đêm – Great Ocean Road, Mornington Peninsula và thung lũng rượu Yarra (https://tourluk.com/au/melbourne-gor-mornington-yarra-lunch/)\n• Hoặc dành một ngày thư giãn trọn vẹn tại Suối khoáng nóng thiên nhiên Peninsula Hot Springs (https://tourluk.com/au/peninsula-hot-springs/) với khung cảnh thiên nhiên tuyệt mỹ.`,
       },
     ],
     cta: `LƯU LẠI CẨM NANG VÀ NHẬN BẢN ĐỒ ĂN UỐNG MUA SẮM TẠI ÚC`,
@@ -316,25 +328,25 @@ export const TOUR_ARTICLE_BLUEPRINTS: Record<string, ArticleBlueprint> = {
     sections: [
       {
         heading: `⚡ 1. LỊCH TRÌNH 3 - 5 NGÀY: TẬP TRUNG KHÁM PHÁ MỘT ĐÔ THỊ ĐỈNH CAO`,
-        text: `Nếu bạn kết hợp chuyến đi cùng công tác, thăm thân hoặc chỉ có kỳ nghỉ ngắn ngày, lựa chọn thông minh nhất là tập trung trọn vẹn vào Sydney hoặc Melbourne. Việc không phải di chuyển máy bay giữa các bang sẽ giúp bạn tiết kiệm nhiều thời gian quý báu. Bạn có thể thư thả dạo chơi các danh thắng nổi tiếng ở trung tâm và dành thêm một ngày trải nghiệm các tour dã ngoại tuyệt đẹp như thung lũng rượu vang Yarra Valley hay dãy núi Blue Mountains.`,
+        text: `Nếu bạn kết hợp chuyến đi cùng công tác, thăm thân hoặc chỉ có kỳ nghỉ ngắn ngày, lựa chọn thông minh nhất là tập trung trọn vẹn vào Sydney hoặc Melbourne. Việc không phải di chuyển máy bay giữa các bang sẽ giúp bạn tiết kiệm nhiều thời gian quý báu. Bạn có thể thư thả dạo chơi các danh thắng nổi tiếng ở trung tâm và dành thêm thời gian trải nghiệm:\n• Tour Sydney 5 ngày 4 đêm – Chinh phục Blue Mountains và Canberra (https://tourluk.com/au/sydney-va-canberra/)\n• Hoặc Tour Melbourne 4 ngày 3 đêm – Great Ocean Road và đảo Phillip (https://tourluk.com/au/melbourne-gor-phillip/)`,
         imageIndex: 0,
         imageCaption: `Khung cảnh vịnh biển Sydney lý tưởng cho những chuyến đi ngắn ngày tập trung trải nghiệm.`,
       },
       {
-        heading: `🌟 2. LỊCH TRÌNH 7 - 8 NGÀY: "LỰA CHỌN VÀNG" LIÊN TUYẾN SYDNEY - MELBOURNE`,
-        text: `Đây là hành trình được hơn 80% du khách Việt Nam lựa chọn cho chuyến đi Úc đầu tiên. Khoảng thời gian này vừa vặn để bạn dành bốn ngày khám phá vẻ đẹp hiện đại của Sydney bên bờ vịnh, và bốn ngày còn lại đắm mình trong nét văn hóa cổ điển, ngắm chim cánh cụt tại đảo Phillip và chinh phục cung đường biển Great Ocean Road ở Melbourne. Chuyến đi mang lại sự cân bằng hoàn hảo giữa chi phí, thời gian nghỉ phép và chiều sâu trải nghiệm.`,
+        heading: `🌟 2. LỊCH TRÌNH 7 - 8 NGÀY: "LỰA CHỌN VÀNG" LIÊN TUYẾN KINH ĐIỂN`,
+        text: `Đây là hành trình được hơn 80% du khách Việt Nam lựa chọn cho chuyến đi Úc đầu tiên. Khoảng thời gian này vừa vặn để bạn dành bốn ngày khám phá vẻ đẹp hiện đại của Sydney bên bờ vịnh, và ba đến bốn ngày còn lại đắm mình trong nét văn hóa cổ điển ở Melbourne hoặc khám phá biển ngọc Queensland. Các gói tour tiêu biểu gồm:\n• Tour Sydney và Brisbane 8 ngày 7 đêm – Khám phá K’gari và Vịnh Byron (https://tourluk.com/au/sydney-brisbane-sb8b/)\n• Tour Brisbane 7 ngày 6 đêm – Thiên đường đảo ngọc Queensland (https://tourluk.com/au/brisbane-cairns-bc7b/)`,
         imageIndex: 1,
         imageCaption: `Sắc xanh yên bình của cung đường Great Ocean Road tại bang Victoria trong hành trình 7-8 ngày.`,
       },
       {
         heading: `🚀 3. LỊCH TRÌNH 10 - 14 NGÀY: ĐẠI HÀNH TRÌNH XUYÊN NƯỚC ÚC`,
-        text: `Dành cho những gia đình có kỳ nghỉ dài và mong muốn khám phá trọn vẹn xứ sở chuột túi một lần cho thỏa mơ ước. Bạn có thể mở rộng tuyến Sydney – Melbourne tới vùng biển nắng ấm rực rỡ Brisbane và Gold Coast, hoặc ghé thăm rạn san hô Great Barrier Reef kỳ vĩ tại Cairns. Đây sẽ là một hành trình đa sắc màu, kết hợp hoàn hảo từ những công trình biểu tượng hiện đại đến những kỳ quan thiên nhiên ngoạn mục hàng đầu thế giới.`,
+        text: `Dành cho những gia đình có kỳ nghỉ dài và mong muốn khám phá trọn vẹn xứ sở chuột túi một lần cho thỏa mơ ước. Bạn có thể mở rộng tuyến Sydney – Melbourne tới vùng biển nắng ấm rực rỡ Brisbane và rạn san hô Great Barrier Reef, hoặc đặt chân tới hòn đảo thiên nhiên hoang sơ Tasmania:\n• Tour Sydney và Cairns 14 ngày 13 đêm – Từ Sydney đến rạn san hô thế giới (https://tourluk.com/au/sydney-cairns-14b/)\n• Tour Tasmania 10 ngày 9 đêm – Khám phá vùng đất hoang sơ nhất Úc (https://tourluk.com/au/tour-tasmania-10-ngay/)`,
         imageIndex: 2,
         imageCaption: `Bãi biển Surfers Paradise đầy nắng tại Queensland – điểm dừng chân không thể thiếu cho hành trình 10-14 ngày.`,
       },
       {
         heading: `🎯 LỜI KHUYÊN TỪ CHUYÊN GIA TOURLUK:`,
-        text: `Khoảng cách địa lý giữa các thành phố tại Úc khá xa nhau. Bạn không nên cố gắng dồn quá bốn đến năm thành phố vào một chuyến đi dưới tám ngày, vì việc liên tục di chuyển ra vào sân bay sẽ làm giảm thời gian tận hưởng kỳ nghỉ. Hãy để TourLuk giúp bạn tối ưu hóa tuyến điểm hợp lý và thảnh thơi nhất.`,
+        text: `Khoảng cách địa lý giữa các thành phố tại Úc khá xa nhau. Bạn không nên cố gắng dồn quá bốn đến năm thành phố vào một chuyến đi dưới tám ngày, vì việc liên tục di chuyển ra vào sân bay sẽ làm giảm thời gian tận hưởng kỳ nghỉ. Hãy để chuyên viên TourLuk tư vấn lịch trình tối ưu và vừa sức nhất cho đoàn của bạn.`,
       },
     ],
     cta: `NHẬN TƯ VẤN THIẾT KẾ LỊCH TRÌNH RIÊNG THEO SỐ NGÀY NGHỈ CỦA BẠN`,
@@ -363,8 +375,8 @@ export const TOUR_ARTICLE_BLUEPRINTS: Record<string, ArticleBlueprint> = {
         imageCaption: `Trải nghiệm du thuyền trên vịnh Sydney được bao gồm trọn gói trong dịch vụ tiêu chuẩn của TourLuk.`,
       },
       {
-        heading: `✅ CHÍNH SÁCH BẢO VỆ KHÁCH HÀNG TẠI TOURLUK:`,
-        text: `TourLuk cam kết một hợp đồng minh bạch 100%, tuyệt đối không có chi phí ẩn phát sinh, đồng thời hỗ trợ bảo lưu và hoàn phí theo quy định rõ ràng nếu phát sinh sự cố về thủ tục visa.`,
+        heading: `✅ THAM KHẢO BẢNG GIÁ VÀ CHÍNH SÁCH BẢO VỆ TẠI TOURLUK:`,
+        text: `TourLuk công khai minh bạch mọi mức giá và chi tiết dịch vụ đi kèm. Bạn có thể tham khảo trực tiếp:\n• Các gói Tour ghép tiết kiệm tại Úc: https://tourluk.com/au/tour-ghep-tai-uc/\n• Các gói Tour riêng cao cấp: https://tourluk.com/au/tour-rieng-tai-uc/\nChúng tôi cam kết một hợp đồng minh bạch 100%, tuyệt đối không có phụ thu ẩn, đồng thời hỗ trợ bảo lưu và hoàn phí chu đáo nếu có bất kỳ thay đổi nào về thủ tục visa.`,
       },
     ],
     cta: `NHẬN BẢNG BÁO GIÁ CHI TIẾT VÀ CHƯƠNG TRÌNH KHUYẾN MÃI MỚI NHẤT`,
@@ -432,7 +444,7 @@ export const TOUR_ARTICLE_BLUEPRINTS: Record<string, ArticleBlueprint> = {
       },
       {
         heading: `📌 12. CHUẨN BỊ THỦ TỤC VISA SỚM TỪ 1 ĐẾN 2 THÁNG`,
-        text: `Thời gian xét duyệt visa du lịch Úc thường kéo dài từ hai đến bốn tuần. Việc nộp hồ sơ sớm sẽ giúp bạn chủ động thời gian, săn được vé máy bay khung giờ đẹp và giữ trọn vẹn mức giá ưu đãi tốt nhất cho chuyến đi.`,
+        text: `Thời gian xét duyệt visa du lịch Úc thường kéo dài từ hai đến bốn tuần. Việc nộp hồ sơ sớm sẽ giúp bạn chủ động thời gian, săn được vé máy bay khung giờ đẹp và giữ trọn vẹn mức giá ưu đãi tốt nhất cho chuyến đi. Bạn có thể tham khảo trọn bộ hơn 100+ hành trình thực tế tại https://tourluk.com/au/ để lên kế hoạch hoàn hảo nhất.`,
       },
     ],
     cta: `LƯU LẠI 12 BÀI HỌC VÀ NHẬN TƯ VẤN MAY ĐO CHUYẾN ĐI CỦA BẠN`,
@@ -442,6 +454,7 @@ export const TOUR_ARTICLE_BLUEPRINTS: Record<string, ArticleBlueprint> = {
 
 /**
  * Xây dựng nội dung văn bản hoàn chỉnh có chèn các thẻ hình ảnh inline
+ * Gắn đường dẫn website https://tourluk.com/au/ và Hotline 0819 190 101 vào cuối bài viết
  */
 export function generateArticleFromBlueprint(
   blueprint: ArticleBlueprint,
@@ -468,7 +481,9 @@ export function generateArticleFromBlueprint(
   });
 
   content += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
-  content += `👉 ${blueprint.cta}\n`;
+  content += `👉 ${blueprint.cta}\n\n`;
+  content += `🌐 Khám phá các tour du lịch Úc của TourLuk tại: https://tourluk.com/au/\n`;
+  content += `☎️ Hotline / Zalo tư vấn 24/7: 0819 190 101\n`;
   content += `📲 Nhắn tin trực tiếp qua Zalo OA của TourLuk hoặc bấm nút "Quan tâm" ngay bên dưới để chuyên viên gửi trọn bộ thông tin và tư vấn miễn phí cho chuyến đi của bạn!\n\n`;
 
   content += blueprint.hashtags.map((t) => `#${t}`).join(' ');
@@ -478,4 +493,3 @@ export function generateArticleFromBlueprint(
     content,
   };
 }
-
