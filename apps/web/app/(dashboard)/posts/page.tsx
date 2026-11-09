@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import {
   Share2,
   Plus,
@@ -35,9 +36,52 @@ import { Modal } from '@/components/ui/modal';
 import { DemoBadge } from '@/components/ui/demo-badge';
 import { fetchApi } from '@/lib/api';
 import { formatDate, formatShortDate } from '@/lib/utils';
-import { ZaloOaPostsManager } from '@/components/zalo-oa/zalo-oa-posts-manager';
-import { TourContentManager } from '@/components/zalo-oa/tour-content-manager';
-import { TourArticleWorkflow } from '@/components/zalo-oa/tour-article-workflow';
+
+// Lazy load các component nặng để tránh màn hình đen khi JS chunk chưa sẵn sàng
+const ZaloOaPostsManager = dynamic(
+  () => import('@/components/zalo-oa/zalo-oa-posts-manager').then((m) => ({ default: m.ZaloOaPostsManager })),
+  {
+    loading: () => (
+      <div className="flex flex-1 items-center justify-center py-20">
+        <div className="flex flex-col items-center gap-3 text-slate-400">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-red-500 border-t-transparent" />
+          <span className="text-sm">Đang tải...</span>
+        </div>
+      </div>
+    ),
+    ssr: false,
+  }
+);
+
+const TourContentManager = dynamic(
+  () => import('@/components/zalo-oa/tour-content-manager').then((m) => ({ default: m.TourContentManager })),
+  {
+    loading: () => (
+      <div className="flex flex-1 items-center justify-center py-20">
+        <div className="flex flex-col items-center gap-3 text-slate-400">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-red-500 border-t-transparent" />
+          <span className="text-sm">Đang tải kế hoạch tour...</span>
+        </div>
+      </div>
+    ),
+    ssr: false,
+  }
+);
+
+const TourArticleWorkflow = dynamic(
+  () => import('@/components/zalo-oa/tour-article-workflow').then((m) => ({ default: m.TourArticleWorkflow })),
+  {
+    loading: () => (
+      <div className="flex flex-1 items-center justify-center py-20">
+        <div className="flex flex-col items-center gap-3 text-slate-400">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-red-500 border-t-transparent" />
+          <span className="text-sm">Đang tải bài viết Zalo OA...</span>
+        </div>
+      </div>
+    ),
+    ssr: false,
+  }
+);
 
 interface SaleAccount {
   id: string;

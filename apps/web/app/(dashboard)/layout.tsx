@@ -24,10 +24,15 @@ export default function DashboardLayout({
 
   if (!isAuthorized) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#060a14]">
-        <div className="flex items-center gap-3 text-slate-400">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-red-500 border-t-transparent" />
-          <span className="text-sm font-medium">Kiểm tra quyền truy cập...</span>
+      <div className="flex h-screen items-center justify-center bg-[#090d16]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative h-12 w-12">
+            <div className="absolute inset-0 h-12 w-12 animate-spin rounded-full border-2 border-red-500 border-t-transparent" />
+            <div className="flex h-12 w-12 items-center justify-center">
+              <span className="text-lg">✈️</span>
+            </div>
+          </div>
+          <span className="text-sm text-slate-400">Đang xác thực...</span>
         </div>
       </div>
     );
