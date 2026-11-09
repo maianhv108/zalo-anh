@@ -122,7 +122,12 @@ export class TourOaArticlesService {
     const approvedCount = all.filter((a) => a.status === 'APPROVED' || a.status === 'PUBLISHED').length;
 
     if (status && status !== 'ALL') {
-      all = all.filter((a) => a.status === status);
+      if (status === 'PENDING_APPROVAL') {
+        // Tab Chờ Duyệt hiển thị toàn bộ bài chờ duyệt (cả bài mới và bài vừa sửa) để không bao giờ làm mất bài của người dùng
+        all = all.filter((a) => a.status === 'PENDING_APPROVAL' || a.status === 'REVISED_PENDING');
+      } else {
+        all = all.filter((a) => a.status === status);
+      }
     }
 
     if (search) {

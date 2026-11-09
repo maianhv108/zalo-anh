@@ -133,7 +133,7 @@ export function TourArticleWorkflow() {
   );
 
   // 1. Tải danh sách bài viết từ backend
-  const loadArticles = async (statusTab?: string) => {
+  const loadArticles = async (statusTab?: string, keepArticleId?: string | null) => {
     setIsLoading(true);
     try {
       const tab = statusTab || activeTab;
@@ -145,14 +145,16 @@ export function TourArticleWorkflow() {
       setArticles(res.articles || []);
       setCounts(res.counts || { total: 0, pendingApproval: 0, revisedPending: 0, approved: 0 });
 
-      // Nếu chưa chọn bài nào hoặc bài đang chọn không còn trong danh sách, chọn bài đầu tiên
+      const targetId = keepArticleId || selectedArticleId;
+      // Giữ đúng bài đang chọn hoặc bài vừa sửa (không nhảy về bài đầu tiên)
       if (res.articles && res.articles.length > 0) {
-        if (!selectedArticleId || !res.articles.some((a) => a.id === selectedArticleId)) {
+        if (targetId && res.articles.some((a) => a.id === targetId)) {
+          setSelectedArticleId(targetId);
+          const current = res.articles.find((a) => a.id === targetId);
+          if (current) setSelectedArticle(current);
+        } else {
           setSelectedArticleId(res.articles[0].id);
           setSelectedArticle(res.articles[0]);
-        } else {
-          const current = res.articles.find((a) => a.id === selectedArticleId);
-          if (current) setSelectedArticle(current);
         }
       } else {
         setSelectedArticle(null);
@@ -191,7 +193,7 @@ export function TourArticleWorkflow() {
         type: 'success',
         message: `✅ Đã duyệt thành công bài viết ${articleId}!${publishedText}`,
       });
-      await loadArticles();
+      await loadArticles(undefined, selectedArticleId);
     } catch (e: any) {
       setNotification({ type: 'error', message: e.message || 'Lỗi khi duyệt bài viết.' });
     } finally {
@@ -212,7 +214,7 @@ export function TourArticleWorkflow() {
           type: 'success',
           message: `🎉 Đã xuất bản thành công bài viết ${articleId} lên Zalo OA TourLuk!`,
         });
-        await loadArticles();
+        await loadArticles(undefined, articleId);
       } else {
         setNotification({ type: 'error', message: res?.message || 'Không thể đăng lên Zalo OA' });
       }
@@ -243,7 +245,7 @@ export function TourArticleWorkflow() {
       });
       // Tự động chuyển tab sang Chờ Duyệt Lại để chị kiểm tra ngay
       setActiveTab('REVISED_PENDING');
-      await loadArticles('REVISED_PENDING');
+      await loadArticles('REVISED_PENDING', selectedArticleId);
     } catch (e: any) {
       setNotification({ type: 'error', message: e.message || 'Lỗi khi gửi yêu cầu sửa bài.' });
     } finally {
@@ -304,7 +306,7 @@ export function TourArticleWorkflow() {
         setHighlightedText('');
         setSelectionCoords(null);
         setRegenInstruction('');
-        await loadArticles();
+        await loadArticles(undefined, res.article.id);
 
         // Xóa hiệu ứng highlight sau 6s
         setTimeout(() => setRecentlyRewrittenText(null), 6000);
@@ -339,7 +341,7 @@ export function TourArticleWorkflow() {
       });
       setIsEditModalOpen(false);
       setNotification({ type: 'success', message: 'Đã lưu chỉnh sửa nội dung bài viết thành công!' });
-      await loadArticles();
+      await loadArticles(undefined, selectedArticleId);
     } catch (e: any) {
       setNotification({ type: 'error', message: e.message || 'Lỗi khi lưu chỉnh sửa.' });
     } finally {
