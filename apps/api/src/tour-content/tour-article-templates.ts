@@ -62,11 +62,11 @@ export const TOUR_ARTICLE_BLUEPRINTS: Record<string, ArticleBlueprint> = {
         heading: `📋 1. HỒ SƠ GIẤY TỜ & THỦ TỤC NHẬP CẢNH`,
         text: `Trước ngày lên đường, bạn hãy kiểm tra kỹ hộ chiếu còn hạn ít nhất sáu tháng, chuẩn bị sẵn bản in thị thực Visa 600 cùng vé máy bay khứ hồi. Khi ở trên máy bay, tiếp viên sẽ phát cho bạn Tờ khai nhập cảnh (Incoming Passenger Card). Bạn chỉ cần điền trung thực và cẩn thận từng mục, đặc biệt là phần khai báo hành lý mang theo để quá trình qua cổng an ninh diễn ra thuận lợi và nhanh chóng.`,
         imageIndex: 0,
-        imageCaption: `Sân bay quốc tế Úc với quy trình hải quan và kiểm dịch sinh học nghiêm ngặt bậc nhất thế giới.`,
+        imageCaption: `Quy trình kiểm dịch an toàn sinh học tại sân bay quốc tế Úc rất nghiêm ngặt nhằm bảo vệ hệ sinh thái tự nhiên.`,
       },
       {
-        heading: `⚠️ 2. QUY ĐỊNH HẢI QUAN ÚC SIÊU NGHIÊM NGẶT`,
-        text: `Hải quan Úc nổi tiếng khắt khe bậc nhất thế giới nhằm bảo vệ an toàn sinh học. Bạn hãy nhớ tuyệt đối không mang theo các loại thịt tươi hoặc thịt sấy khô như chà bông, lạp xưởng, bò khô, cũng như trứng, trái cây tươi và các loại hạt giống chưa qua chế biến. Trong trường hợp bạn có mang theo thuốc men cá nhân hoặc thực phẩm đóng gói có nhãn mác rõ ràng, lời khuyên vàng là hãy luôn tích chọn "YES" trên tờ khai để nhân viên kiểm tra nhanh chóng, tránh rủi ro bị phạt tiền rất nặng.`,
+        heading: `⚠️ 2. QUY ĐỊNH AN TOÀN SINH HỌC & HẢI QUAN ÚC (LƯU Ý QUAN TRỌNG)`,
+        text: `Cơ quan kiểm dịch Úc áp dụng quy định rất nghiêm ngặt đối với hành lý nhập cảnh. Bạn hãy nhớ tuyệt đối không mang theo các loại thịt tươi hoặc thịt sấy khô (như chà bông, lạp xưởng, bò khô), các sản phẩm chứa trứng, trái cây tươi và các loại hạt giống chưa qua xử lý. Trong trường hợp có mang theo thuốc cá nhân hoặc thực phẩm đóng gói thương mại có bao bì nhãn mác rõ ràng, bạn hãy chủ động tích chọn "YES" trên tờ khai nhập cảnh để nhân viên hải quan kiểm tra nhanh chóng và đúng quy định.`,
       },
       {
         heading: `💳 3. TIỀN TỆ & KẾT NỐI LIÊN LẠC`,
@@ -196,13 +196,13 @@ export const TOUR_ARTICLE_BLUEPRINTS: Record<string, ArticleBlueprint> = {
     sections: [
       {
         heading: `🌿 NGÀY 1 & 2: THÀNH PHỐ PERTH & THIÊN ĐƯỜNG ĐẢO ROTTNEST`,
-        text: `Hai ngày đầu tiên tại miền Tây Úc sẽ đưa bạn đến với công viên Kings Park rộng lớn, nơi bạn có thể phóng tầm mắt ôm trọn đường chân trời tuyệt đẹp của thành phố Perth và dòng sông Swan êm đềm. Chuyến hải trình tiếp tục bằng phà cao tốc đưa bạn sang hòn đảo Rottnest hoang sơ. Tại đây, bạn có thể thong dong đạp xe quanh các vịnh biển vắng người, hòa mình vào làn nước xanh màu ngọc bích và chụp những bức ảnh selfie đáng nhớ cùng loài chuột túi Quokka – loài động vật thân thiện được mệnh danh là hạnh phúc nhất hành tinh.`,
+        text: `Hai ngày đầu tiên tại miền Tây Úc sẽ đưa bạn đến với công viên Kings Park rộng lớn, nơi bạn có thể phóng tầm mắt ôm trọn đường chân trời tuyệt đẹp của thành phố Perth và dòng sông Swan êm đềm. Chuyến hải trình tiếp tục bằng phà cao tốc đưa bạn sang hòn đảo Rottnest hoang sơ. Tại đây, bạn có thể thong dong đạp xe quanh các vịnh biển vắng người, hòa mình vào làn nước xanh màu ngọc bích và chụp những bức ảnh kỷ niệm đáng nhớ cùng loài chuột túi tí hon Quokka nổi tiếng với nụ cười thân thiện và hiền lành.`,
         imageIndex: 0,
         imageCaption: `Góc nhìn ngoạn mục từ đài quan sát công viên Kings Park ôm trọn trung tâm thành phố Perth.`,
       },
       {
         heading: `⛵ NGÀY 3 & 4: CẢNG CỔ FREMANTLE & SA MẠC ĐÁ PINNACLES`,
-        text: `Những ngày tiếp theo là dịp để bạn chậm rãi khám phá thị trấn cảng cổ kính Fremantle với những dãy phố rực rỡ phong vị phương Tây, thưởng thức món cá chiên Fish & Chips giòn rụm bên bến thuyền buồm lộng gió. Hành trình sẽ khép lại đầy ấn tượng tại sa mạc cát vàng Pinnacles thuộc Công viên Quốc gia Nambung, nơi hàng nghìn cột đá vôi nhô lên sừng sững giữa không gian bao la, tạo nên một khung cảnh kỳ vĩ như đang lạc bước trên bề mặt sao Hỏa.`,
+        text: `Những ngày tiếp theo là dịp để bạn chậm rãi khám phá thị trấn cảng cổ kính Fremantle với những dãy phố rực rỡ phong vị phương Tây, thưởng thức món cá chiên Fish & Chips giòn rụm bên bến thuyền buồm lộng gió. Hành trình sẽ khép lại đầy ấn tượng tại sa mạc cát vàng Pinnacles thuộc Công viên Quốc gia Nambung, nơi các cột đá vôi tự nhiên nhô lên giữa cát vàng, tạo nên một cảnh quan địa chất độc đáo và kỳ vĩ bậc nhất bang Tây Úc.`,
         imageIndex: 1,
         imageCaption: `Khung cảnh bình yên của bến du thuyền Fremantle và vùng biển xanh thẳm miền Tây Úc.`,
       },
@@ -256,7 +256,7 @@ export const TOUR_ARTICLE_BLUEPRINTS: Record<string, ArticleBlueprint> = {
     sections: [
       {
         heading: `😅 NỖI NIỀM KHI ĐÓN BA MẸ SANG ÚC THĂM THÂN:`,
-        text: `Ba mẹ vượt vạn dặm sang Úc thăm con cháu là niềm vui khôn tả. Thế nhưng vào ngày thường, bạn bận rộn với công việc còn các cháu mải mê việc học. Để ba mẹ quanh quẩn trong nhà thì bí bách, mà để người lớn tự đi tàu điện thì lại lo lắng rào cản ngôn ngữ và lạc đường. TourLuk chính là giải pháp đồng hành đáng tin cậy giúp bạn san sẻ trọn vẹn nỗi niềm ấy.`,
+        text: `Khoảnh khắc đón ba mẹ từ Việt Nam sang Úc thăm con cháu là niềm vui và hạnh phúc lớn của cả gia đình. Thế nhưng vào ngày thường, bạn bận rộn với công việc còn các cháu mải mê việc học. Để ba mẹ quanh quẩn trong nhà thì bí bách, mà để người lớn tự đi tàu điện thì lại lo lắng rào cản ngôn ngữ và lạc đường. TourLuk chính là giải pháp đồng hành đáng tin cậy giúp bạn san sẻ trọn vẹn nỗi niềm ấy.`,
         imageIndex: 0,
         imageCaption: `Du khách Việt Nam rạng rỡ lưu lại kỷ niệm đẹp khi được chăm sóc chu đáo trong từng chặng đường.`,
       },
@@ -334,7 +334,7 @@ export const TOUR_ARTICLE_BLUEPRINTS: Record<string, ArticleBlueprint> = {
       },
       {
         heading: `🎯 LỜI KHUYÊN TỪ CHUYÊN GIA TOURLUK:`,
-        text: `Nước Úc có diện tích rộng lớn gấp nhiều lần Việt Nam. Bạn không nên cố gắng ép quá bốn đến năm thành phố vào một chuyến đi dưới tám ngày, vì điều đó sẽ khiến bạn phải tốn phần lớn thời gian chờ đợi ở sân bay. Hãy để TourLuk giúp bạn tối ưu hóa thời gian di chuyển để kỳ nghỉ thực sự là khoảng thời gian thư thái và đáng nhớ.`,
+        text: `Khoảng cách địa lý giữa các thành phố tại Úc khá xa nhau. Bạn không nên cố gắng dồn quá bốn đến năm thành phố vào một chuyến đi dưới tám ngày, vì việc liên tục di chuyển ra vào sân bay sẽ làm giảm thời gian tận hưởng kỳ nghỉ. Hãy để TourLuk giúp bạn tối ưu hóa tuyến điểm hợp lý và thảnh thơi nhất.`,
       },
     ],
     cta: `NHẬN TƯ VẤN THIẾT KẾ LỊCH TRÌNH RIÊNG THEO SỐ NGÀY NGHỈ CỦA BẠN`,
@@ -382,7 +382,7 @@ export const TOUR_ARTICLE_BLUEPRINTS: Record<string, ArticleBlueprint> = {
     sections: [
       {
         heading: `📌 1. ĐỪNG CỐ "NHỒI NHÉT" QUÁ NHIỀU THÀNH PHỐ`,
-        text: `Nước Úc rộng lớn ngang cả châu Âu, việc di chuyển giữa các bang sẽ làm mất của bạn ít nhất nửa ngày làm thủ tục sân bay. Với chuyến đi dưới tám ngày, bạn chỉ nên chọn tối đa hai bang tiêu biểu như Sydney và Melbourne để có thời gian thong thả ngắm cảnh mà không bị kiệt sức.`,
+        text: `Khoảng cách giữa các bang tại Úc khá xa nhau (chẳng hạn chặng bay Sydney - Melbourne mất gần 1,5 tiếng, còn bay sang Tây Úc mất hơn 4 tiếng). Mỗi lần di chuyển giữa các thành phố đều cần thời gian làm thủ tục sân bay và nhận phòng khách sạn. Với chuyến đi dưới tám ngày, bạn nên ưu tiên khám phá tối đa hai thành phố tiêu biểu như Sydney và Melbourne để có thời gian thong thả ngắm cảnh mà không bị mệt mỏi.`,
       },
       {
         heading: `📌 2. THỜI TIẾT MELBOURNE NỔI TIẾNG "4 MÙA TRONG 1 NGÀY"`,
