@@ -28,6 +28,8 @@ import {
   Image as ImageIcon,
   ThumbsUp,
   Award,
+  Copy,
+  Globe,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -90,7 +92,7 @@ export interface TourOaArticle {
 }
 
 export function TourArticleWorkflow() {
-  const [activeTab, setActiveTab] = useState<'PENDING_APPROVAL' | 'REVISED_PENDING' | 'APPROVED' | 'ALL'>(
+  const [activeTab, setActiveTab] = useState<'PENDING_APPROVAL' | 'REVISED_PENDING' | 'APPROVED' | 'PUBLISHED' | 'ALL'>(
     'PENDING_APPROVAL',
   );
   const [articles, setArticles] = useState<TourOaArticle[]>([]);
@@ -99,6 +101,7 @@ export function TourArticleWorkflow() {
     pendingApproval: 0,
     revisedPending: 0,
     approved: 0,
+    published: 0,
   });
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<TourOaArticle | null>(null);
@@ -139,11 +142,11 @@ export function TourArticleWorkflow() {
       const tab = statusTab || activeTab;
       const res = await fetchApi<{
         articles: TourOaArticle[];
-        counts: { total: number; pendingApproval: number; revisedPending: number; approved: number };
+        counts: { total: number; pendingApproval: number; revisedPending: number; approved: number; published: number };
       }>(`/tour-content/articles?status=${tab}&search=${encodeURIComponent(searchQuery)}`);
 
       setArticles(res.articles || []);
-      setCounts(res.counts || { total: 0, pendingApproval: 0, revisedPending: 0, approved: 0 });
+      setCounts(res.counts || { total: 0, pendingApproval: 0, revisedPending: 0, approved: 0, published: 0 });
 
       const targetId = keepArticleId || selectedArticleId;
       // Giữ đúng bài đang chọn hoặc bài vừa sửa (không nhảy về bài đầu tiên)
@@ -179,23 +182,28 @@ export function TourArticleWorkflow() {
     }
   }, [selectedArticleId, articles]);
 
-  // 2. Thao tác DUYỆT BÀI -> Chuyển sang "Đã duyệt đăng bài" và tự động đăng lên Zalo OA
+  // 2. Thao tác DUYỆT BÀI -> Chuyển sang "Đã duyệt" hoặc "Đã đăng Zalo OA" nếu đăng thành công
   const handleApprove = async (articleId: string) => {
     setIsActionLoading(true);
     try {
       const updated = await fetchApi<TourOaArticle>(`/tour-content/articles/${articleId}/approve`, {
         method: 'POST',
       });
-      const publishedText = updated?.zaloArticleUrl
+      const isPublished = updated?.status === 'PUBLISHED' || !!updated?.zaloArticleUrl;
+      const publishedText = isPublished
         ? ` Đã tự động xuất bản trực tiếp lên Zalo OA TourLuk!`
         : ` Bài đã được lưu vào danh mục "Đã Duyệt Đăng Bài".`;
       setNotification({
         type: 'success',
         message: `✅ Đã duyệt thành công bài viết ${articleId}!${publishedText}`,
       });
-      // Tự động chuyển tab sang 'APPROVED' để chị nhìn thấy ngay bài vừa duyệt
-      setActiveTab('APPROVED');
-      await loadArticles('APPROVED', articleId);
+      if (isPublished) {
+        setActiveTab('PUBLISHED');
+        await loadArticles('PUBLISHED', articleId);
+      } else {
+        setActiveTab('APPROVED');
+        await loadArticles('APPROVED', articleId);
+      }
     } catch (e: any) {
       setNotification({ type: 'error', message: e.message || 'Lỗi khi duyệt bài viết.' });
     } finally {
@@ -216,7 +224,8 @@ export function TourArticleWorkflow() {
           type: 'success',
           message: `🎉 Đã xuất bản thành công bài viết ${articleId} lên Zalo OA TourLuk!`,
         });
-        await loadArticles(undefined, articleId);
+        setActiveTab('PUBLISHED');
+        await loadArticles('PUBLISHED', articleId);
       } else {
         setNotification({ type: 'error', message: res?.message || 'Không thể đăng lên Zalo OA' });
       }
@@ -455,7 +464,7 @@ export function TourArticleWorkflow() {
             </span>
           </button>
 
-          {/* Tab 3: Đã Duyệt Đăng Bài */}
+          {/* Tab 3: Đã Duyệt Chờ Đăng */}
           <button
             onClick={() => setActiveTab('APPROVED')}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
@@ -465,7 +474,7 @@ export function TourArticleWorkflow() {
             }`}
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Đã Duyệt Đăng Bài</span>
+            <span>Đã Duyệt</span>
             <span
               className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black ${
                 activeTab === 'APPROVED' ? 'bg-white/20 text-white' : 'bg-emerald-500/20 text-emerald-300'
@@ -475,7 +484,27 @@ export function TourArticleWorkflow() {
             </span>
           </button>
 
-          {/* Tab 4: Tất Cả */}
+          {/* Tab 4: Đã Đăng Lên Zalo OA */}
+          <button
+            onClick={() => setActiveTab('PUBLISHED')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
+              activeTab === 'PUBLISHED'
+                ? 'bg-[#0068ff] text-white shadow-md shadow-blue-500/30 scale-105'
+                : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200/80 dark:bg-slate-900/80 dark:text-slate-300 dark:border-slate-800 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span>Đã Đăng Zalo OA</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black ${
+                activeTab === 'PUBLISHED' ? 'bg-white/20 text-white' : 'bg-blue-500/20 text-blue-300'
+              }`}
+            >
+              {counts.published}
+            </span>
+          </button>
+
+          {/* Tab 5: Tất Cả */}
           <button
             onClick={() => setActiveTab('ALL')}
             className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
@@ -600,7 +629,11 @@ export function TourArticleWorkflow() {
                           </span>
 
                           {/* Nhãn trạng thái */}
-                          {art.status === 'APPROVED' ? (
+                          {art.status === 'PUBLISHED' || art.zaloArticleUrl ? (
+                            <span className="text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/40 px-1.5 py-0.5 rounded font-semibold flex items-center gap-1">
+                              <Globe className="w-3 h-3" /> Đã đăng OA
+                            </span>
+                          ) : art.status === 'APPROVED' ? (
                             <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.5 rounded font-semibold flex items-center gap-1">
                               <Check className="w-3 h-3" /> Đã duyệt
                             </span>
@@ -657,17 +690,19 @@ export function TourArticleWorkflow() {
                       Trạng thái hiện tại:{' '}
                       <strong
                         className={
-                          selectedArticle.status === 'APPROVED'
+                          selectedArticle.status === 'PUBLISHED' || selectedArticle.zaloArticleUrl
+                            ? 'text-blue-400'
+                            : selectedArticle.status === 'APPROVED'
                             ? 'text-emerald-400'
                             : selectedArticle.status === 'REVISED_PENDING'
                             ? 'text-indigo-400'
                             : 'text-amber-400'
                         }
                       >
-                        {selectedArticle.zaloArticleUrl
-                          ? 'Đã Xuất Bản Lên Zalo OA'
+                        {selectedArticle.status === 'PUBLISHED' || selectedArticle.zaloArticleUrl
+                          ? 'Đã Đăng Lên Zalo OA'
                           : selectedArticle.status === 'APPROVED'
-                          ? 'Đã Duyệt Đăng Bài'
+                          ? 'Đã Duyệt (Sẵn sàng đăng OA)'
                           : selectedArticle.status === 'REVISED_PENDING'
                           ? `Chờ Duyệt Lại (Đã sửa theo yêu cầu)`
                           : 'Đang Chờ Duyệt Lần Đầu'}
@@ -676,19 +711,39 @@ export function TourArticleWorkflow() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  {/* Nút Xem bài viết trên Zalo OA thực tế nếu đã đăng */}
-                  {selectedArticle.zaloArticleUrl && (
-                    <a
-                      href={selectedArticle.zaloArticleUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-blue-600/30 transition-all animate-pulse"
-                      title="Mở bài viết đã xuất bản trên Zalo OA"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Xem Trên Zalo OA</span>
-                    </a>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Nút Xem & Copy bài viết trên Zalo OA thực tế nếu đã đăng */}
+                  {(selectedArticle.status === 'PUBLISHED' || selectedArticle.zaloArticleUrl) && (
+                    <>
+                      {selectedArticle.zaloArticleUrl && (
+                        <button
+                          onClick={() => {
+                            if (selectedArticle.zaloArticleUrl) {
+                              navigator.clipboard.writeText(selectedArticle.zaloArticleUrl);
+                              setNotification({
+                                type: 'success',
+                                message: '📋 Đã sao chép link bài viết Zalo OA vào bộ nhớ tạm!',
+                              });
+                            }
+                          }}
+                          className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+                          title="Sao chép liên kết bài viết Zalo OA"
+                        >
+                          <Copy className="w-3.5 h-3.5 text-slate-300" />
+                          <span>Sao chép Link</span>
+                        </button>
+                      )}
+                      <a
+                        href={selectedArticle.zaloArticleUrl || '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 rounded-lg bg-[#0068ff] hover:bg-blue-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-blue-600/30 transition-all hover:scale-105 active:scale-95"
+                        title="Mở bài viết đã xuất bản trên Zalo OA"
+                      >
+                        <Globe className="w-3.5 h-3.5" />
+                        <span>Xem Trên Zalo OA</span>
+                      </a>
+                    </>
                   )}
 
                   {/* Nút Tự Sửa */}
@@ -715,35 +770,107 @@ export function TourArticleWorkflow() {
                     Yêu Cầu Sửa
                   </Button>
 
-                  {/* Nút Đăng lên Zalo OA nếu bài đã duyệt nhưng chưa có link */}
+                  {/* Nút Đăng lên Zalo OA nếu bài đã duyệt nhưng chưa đăng */}
                   {selectedArticle.status === 'APPROVED' && !selectedArticle.zaloArticleUrl && (
                     <Button
                       size="sm"
                       onClick={() => handlePublishToOa(selectedArticle.id)}
                       disabled={isActionLoading}
-                      className="text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/20"
+                      className="text-xs font-black bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-600/30 hover:scale-105 active:scale-95 animate-pulse"
                     >
-                      <Send className="w-3.5 h-3.5 mr-1" />
-                      Đăng Lên Zalo OA
+                      <Send className="w-3.5 h-3.5 mr-1.5" />
+                      {isActionLoading ? 'Đang Đăng Lên Zalo OA...' : '🚀 Đăng Ngay Lên Zalo OA'}
                     </Button>
                   )}
 
-                  {/* Nút Duyệt & Đăng lên Zalo OA */}
-                  <Button
-                    size="sm"
-                    onClick={() => handleApprove(selectedArticle.id)}
-                    disabled={isActionLoading || selectedArticle.status === 'APPROVED'}
-                    className={`text-xs font-bold shadow-lg transition-all ${
-                      selectedArticle.status === 'APPROVED'
-                        ? 'bg-emerald-800/60 text-emerald-200 cursor-not-allowed'
-                        : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30 hover:scale-105 active:scale-95'
-                    }`}
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
-                    {selectedArticle.status === 'APPROVED' ? '✅ Đã Duyệt Bài Này' : '🚀 Duyệt & Đăng Lên Zalo OA'}
-                  </Button>
+                  {/* Nút Duyệt & Đăng lên Zalo OA cho bài đang chờ duyệt */}
+                  {(selectedArticle.status === 'PENDING_APPROVAL' || selectedArticle.status === 'REVISED_PENDING') && (
+                    <Button
+                      size="sm"
+                      onClick={() => handleApprove(selectedArticle.id)}
+                      disabled={isActionLoading}
+                      className="text-xs font-bold shadow-lg transition-all bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30 hover:scale-105 active:scale-95"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+                      {isActionLoading ? 'Đang Duyệt & Đăng...' : '🚀 Duyệt & Đăng Lên Zalo OA'}
+                    </Button>
+                  )}
                 </div>
               </div>
+
+              {/* CARD THÔNG BÁO VÀ LINK BÀI ĐĂNG ZALO OA NẾU ĐÃ XUẤT BẢN THÀNH CÔNG */}
+              {(selectedArticle.status === 'PUBLISHED' || selectedArticle.zaloArticleUrl) && (
+                <div className="p-4 bg-gradient-to-r from-[#002f6c]/90 via-[#0a234d]/90 to-[#063024]/90 rounded-2xl border-2 border-emerald-500/60 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 text-white">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center shrink-0 mt-0.5">
+                      <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black uppercase tracking-wider text-emerald-300">
+                          🎉 ĐÃ ĐĂNG BÀI THÀNH CÔNG LÊN ZALO OFFICIAL ACCOUNT
+                        </span>
+                        <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">
+                          Chính thức
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-300">
+                        Bài viết đã được đăng lên OA: <strong>TourLuk Official</strong> (ID: {selectedArticle.zaloArticleId || 'OA'})
+                        {selectedArticle.publishedAt && (
+                          <span className="ml-2 text-slate-400">
+                            • Thời gian: {new Date(selectedArticle.publishedAt).toLocaleString('vi-VN')}
+                          </span>
+                        )}
+                      </p>
+                      {selectedArticle.zaloArticleUrl && (
+                        <div className="flex items-center gap-2 pt-1 text-xs text-blue-300 font-mono break-all">
+                          <span className="text-slate-400 shrink-0">Link bài viết:</span>
+                          <a
+                            href={selectedArticle.zaloArticleUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline hover:text-blue-200 line-clamp-1"
+                          >
+                            {selectedArticle.zaloArticleUrl}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {selectedArticle.zaloArticleUrl && (
+                      <>
+                        <button
+                          onClick={() => {
+                            if (selectedArticle.zaloArticleUrl) {
+                              navigator.clipboard.writeText(selectedArticle.zaloArticleUrl);
+                              setNotification({
+                                type: 'success',
+                                message: '📋 Đã sao chép link bài viết Zalo OA vào bộ nhớ tạm!',
+                              });
+                            }
+                          }}
+                          className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center gap-1.5 transition-all shadow-md active:scale-95"
+                          title="Sao chép liên kết bài viết"
+                        >
+                          <Copy className="w-3.5 h-3.5 text-slate-300" />
+                          <span>Sao chép Link</span>
+                        </button>
+                        <a
+                          href={selectedArticle.zaloArticleUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3.5 py-2 rounded-xl bg-[#0068ff] hover:bg-blue-600 text-white text-xs font-black flex items-center gap-1.5 shadow-lg shadow-blue-500/30 transition-all hover:scale-105 active:scale-95"
+                        >
+                          <Globe className="w-4 h-4" />
+                          <span>Xem Trực Tiếp Trên Zalo OA</span>
+                        </a>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* THANH HƯỚNG DẪN TÍNH NĂNG TÔ ĐEN SỬA TỰ ĐỘNG BẰNG AI */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 bg-gradient-to-r from-indigo-950/70 via-purple-950/60 to-slate-900 border border-indigo-500/30 rounded-2xl text-xs shadow-md">

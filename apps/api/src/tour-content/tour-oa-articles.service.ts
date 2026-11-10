@@ -116,15 +116,20 @@ export class TourOaArticlesService {
 
     let all = Array.from(this.articlesMap.values());
 
-    // Thống kê số lượng theo từng tab
+    // Thống kê số lượng theo từng tab riêng biệt
     const pendingApprovalCount = all.filter((a) => a.status === 'PENDING_APPROVAL').length;
     const revisedPendingCount = all.filter((a) => a.status === 'REVISED_PENDING').length;
-    const approvedCount = all.filter((a) => a.status === 'APPROVED' || a.status === 'PUBLISHED').length;
+    const approvedCount = all.filter((a) => a.status === 'APPROVED').length;
+    const publishedCount = all.filter((a) => a.status === 'PUBLISHED').length;
 
     if (status && status !== 'ALL') {
       if (status === 'PENDING_APPROVAL') {
-        // Tab Chờ Duyệt hiển thị toàn bộ bài chờ duyệt (cả bài mới và bài vừa sửa) để không bao giờ làm mất bài của người dùng
+        // Tab Chờ Duyệt hiển thị toàn bộ bài chờ duyệt (cả bài mới và bài vừa sửa)
         all = all.filter((a) => a.status === 'PENDING_APPROVAL' || a.status === 'REVISED_PENDING');
+      } else if (status === 'PUBLISHED') {
+        all = all.filter((a) => a.status === 'PUBLISHED');
+      } else if (status === 'APPROVED') {
+        all = all.filter((a) => a.status === 'APPROVED');
       } else {
         all = all.filter((a) => a.status === status);
       }
@@ -152,6 +157,7 @@ export class TourOaArticlesService {
         pendingApproval: pendingApprovalCount,
         revisedPending: revisedPendingCount,
         approved: approvedCount,
+        published: publishedCount,
       },
     };
   }
@@ -228,13 +234,91 @@ export class TourOaArticlesService {
     const activeToken = this.getValidAccessToken();
     if (activeToken) {
       try {
-        await this.publishToZaloOa(id);
+        const pubResult = await this.publishToZaloOa(id);
+        if (pubResult && pubResult.success) {
+          article.status = 'PUBLISHED';
+          this.logger.log(`🚀 Đã tự động xuất bản bài viết ${id} lên Zalo OA thành công!`);
+        }
       } catch (pubErr: any) {
         this.logger.warn(`Lỗi khi tự động đăng lên Zalo OA: ${pubErr.message}`);
       }
     }
 
     return this.articlesMap.get(id) || article;
+  }
+
+  /**
+   * Tự động làm mới Zalo OA Access Token bằng refresh_token khi token hết hạn
+   */
+  async refreshAccessToken(): Promise<string | null> {
+    const candidatePaths = [
+      path.resolve('data/zalo-oa-token.json'),
+      path.resolve('apps/api/data/zalo-oa-token.json'),
+      path.resolve(__dirname, '../../../data/zalo-oa-token.json'),
+      path.resolve(__dirname, '../../data/zalo-oa-token.json'),
+    ];
+
+    let tokenFile = '';
+    let tokenData: any = null;
+
+    for (const p of candidatePaths) {
+      if (fs.existsSync(p)) {
+        try {
+          const raw = fs.readFileSync(p, 'utf8');
+          tokenData = JSON.parse(raw);
+          tokenFile = p;
+          break;
+        } catch {}
+      }
+    }
+
+    if (!tokenData || !tokenData.refreshToken) {
+      this.logger.warn('Không tìm thấy refreshToken trong file zalo-oa-token.json');
+      return null;
+    }
+
+    const secret = process.env.ZALO_APP_SECRET || 'ESu0DB5SNXKE1q5mt5Qw';
+    const appId = process.env.ZALO_APP_ID || tokenData.appId || '3878161380934160383';
+    const refreshToken = tokenData.refreshToken;
+
+    try {
+      const res = await fetch('https://oauth.zalo.me/v4/oa/access_token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          secret_key: secret,
+        },
+        body: new URLSearchParams({
+          app_id: appId,
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken,
+        }).toString(),
+      });
+
+      const data = (await res.json()) as any;
+      if (data.access_token) {
+        tokenData.accessToken = data.access_token;
+        if (data.refresh_token) tokenData.refreshToken = data.refresh_token;
+        tokenData.expiresIn = data.expires_in;
+        tokenData.updatedAt = new Date().toISOString();
+
+        for (const p of candidatePaths) {
+          try {
+            const dir = path.dirname(p);
+            if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+            fs.writeFileSync(p, JSON.stringify(tokenData, null, 2), 'utf8');
+          } catch {}
+        }
+
+        this.logger.log('🔄 Tự động làm mới Zalo OA Access Token thành công!');
+        return data.access_token;
+      } else {
+        this.logger.error(`Không thể làm mới token Zalo OA: ${JSON.stringify(data)}`);
+      }
+    } catch (e: any) {
+      this.logger.error(`Lỗi khi gọi API làm mới token Zalo OA: ${e.message}`);
+    }
+    return null;
   }
 
   /**
@@ -266,68 +350,82 @@ export class TourOaArticlesService {
    */
   async publishToZaloOa(id: string): Promise<{ success: boolean; zaloArticleId?: string; zaloArticleUrl?: string; message?: string }> {
     const article = await this.findOne(id);
-    const token = this.getValidAccessToken();
+    let token = this.getValidAccessToken();
     if (!token) {
       return { success: false, message: 'Chưa cấu hình Zalo OA Access Token trong hệ thống' };
     }
 
     try {
-      // 1. Phân tích nội dung và tách thành các khối body Zalo (text & image)
-      const bodyBlocks: Array<{ type: 'text' | 'image'; content?: string; url?: string; caption?: string }> = [];
-      const parts = article.content.split(/(\[HÌNH_ẢNH[^\]]+\])/g);
-      let galleryIndex = 0;
+      const doCreateArticle = async (authToken: string) => {
+        // 1. Phân tích nội dung và tách thành các khối body Zalo (text & image)
+        const bodyBlocks: Array<{ type: 'text' | 'image'; content?: string; url?: string; caption?: string }> = [];
+        const parts = article.content.split(/(\[HÌNH_ẢNH[^\]]+\])/g);
+        let galleryIndex = 0;
 
-      for (const part of parts) {
-        if (!part.trim()) continue;
-        const imgMatch = part.match(/\[HÌNH_ẢNH_\d+:\s*([^\]]+)\]/);
-        if (imgMatch) {
-          const caption = imgMatch[1].trim();
-          const imgObj = article.galleryImages?.[galleryIndex] || article.coverImage;
-          const imgUrl = imgObj?.thumbnailUrl || 'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=1000&q=80';
-          bodyBlocks.push({
-            type: 'image',
-            url: imgUrl,
-            caption: caption.slice(0, 200),
-          });
-          galleryIndex++;
-        } else {
-          bodyBlocks.push({
-            type: 'text',
-            content: part.trim(),
-          });
+        for (const part of parts) {
+          if (!part.trim()) continue;
+          const imgMatch = part.match(/\[HÌNH_ẢNH_\d+:\s*([^\]]+)\]/);
+          if (imgMatch) {
+            const caption = imgMatch[1].trim();
+            const imgObj = article.galleryImages?.[galleryIndex] || article.coverImage;
+            const imgUrl = imgObj?.thumbnailUrl || 'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=1000&q=80';
+            bodyBlocks.push({
+              type: 'image',
+              url: imgUrl,
+              caption: caption.slice(0, 200),
+            });
+            galleryIndex++;
+          } else {
+            bodyBlocks.push({
+              type: 'text',
+              content: part.trim(),
+            });
+          }
         }
-      }
 
-      // 2. Chuẩn bị ảnh bìa
-      const coverUrl = article.coverImage?.thumbnailUrl || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80';
+        // 2. Chuẩn bị ảnh bìa
+        const coverUrl = article.coverImage?.thumbnailUrl || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80';
 
-      const payload = {
-        type: 'normal',
-        title: article.title.slice(0, 150),
-        author: 'TourLuk Travel Official',
-        cover: {
-          cover_type: 'photo',
-          photo_url: coverUrl,
-          status: 'show',
-        },
-        description: (article.excerpt || article.title).slice(0, 300),
-        body: bodyBlocks.length > 0 ? bodyBlocks : [{ type: 'text', content: article.content }],
-        status: 'show', // Xuất bản công khai lên Zalo OA
-        comment: 'show',
+        const payload = {
+          type: 'normal',
+          title: article.title.slice(0, 150),
+          author: 'TourLuk Travel Official',
+          cover: {
+            cover_type: 'photo',
+            photo_url: coverUrl,
+            status: 'show',
+          },
+          description: (article.excerpt || article.title).slice(0, 300),
+          body: bodyBlocks.length > 0 ? bodyBlocks : [{ type: 'text', content: article.content }],
+          status: 'show', // Xuất bản công khai lên Zalo OA
+          comment: 'show',
+        };
+
+        const res = await fetch('https://openapi.zalo.me/v2.0/article/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            access_token: authToken,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        return (await res.json()) as any;
       };
 
-      // 3. Gửi request tạo bài viết lên Zalo OpenAPI
-      const res = await fetch('https://openapi.zalo.me/v2.0/article/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'access_token': token,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const resData = (await res.json()) as any;
+      let resData = await doCreateArticle(token);
       this.logger.log(`Zalo OA Create Article response for ${id}: ${JSON.stringify(resData)}`);
+
+      // Nếu token hết hạn (-216), tự động refresh và gọi lại 1 lần
+      if (resData.error === -216) {
+        this.logger.warn(`Zalo OA Access Token hết hạn, đang tự động làm mới...`);
+        const newToken = await this.refreshAccessToken();
+        if (newToken) {
+          token = newToken;
+          resData = await doCreateArticle(token);
+          this.logger.log(`Retry Create Article with refreshed token: ${JSON.stringify(resData)}`);
+        }
+      }
 
       if (resData.error !== 0 && !resData.data?.token) {
         throw new Error(resData.message || 'Lỗi từ Zalo API');
