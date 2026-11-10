@@ -1,29 +1,29 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 export default function RootPage() {
-  const router = useRouter();
-  const [tooSlow, setTooSlow] = useState(false);
+  const [showRetry, setShowRetry] = useState(false);
 
   useEffect(() => {
-    // Timeout 8s: nếu chưa redirect thì hiện nút thử lại
-    const timer = setTimeout(() => setTooSlow(true), 8000);
-
-    try {
-      const token = localStorage.getItem('sales_zalo_token');
-      if (token) {
-        router.replace('/dashboard');
-      } else {
-        router.replace('/login');
+    // Chuyển hướng trực tiếp bằng window.location.replace dứt khoát
+    // Bỏ qua hàng đợi chuyển cảnh của Next Router giúp không bị treo màn hình
+    const redirect = () => {
+      try {
+        const token = localStorage.getItem('sales_zalo_token');
+        const target = token ? '/dashboard' : '/login';
+        window.location.replace(target);
+      } catch {
+        window.location.replace('/login');
       }
-    } catch {
-      router.replace('/login');
-    }
+    };
 
+    redirect();
+
+    // Sau 3 giây nếu trình duyệt chặn tự động chuyển hướng thì hiện nút bấm
+    const timer = setTimeout(() => setShowRetry(true), 3000);
     return () => clearTimeout(timer);
-  }, [router]);
+  }, []);
 
   return (
     <div className="flex h-screen items-center justify-center bg-[#090d16]">
@@ -37,18 +37,18 @@ export default function RootPage() {
         </div>
 
         <div>
-          <p className="text-sm font-medium text-slate-300">TourLuk CRM</p>
-          <p className="text-xs text-slate-500 mt-1">
-            {tooSlow ? 'Đang kết nối lại...' : 'Đang khởi động...'}
+          <p className="text-sm font-medium text-slate-200">TourLuk CRM</p>
+          <p className="text-xs text-slate-400 mt-1">
+            Đang vào hệ thống...
           </p>
         </div>
 
-        {tooSlow && (
+        {showRetry && (
           <button
-            onClick={() => window.location.reload()}
-            className="mt-2 rounded-lg bg-red-500 px-4 py-2 text-xs font-medium text-white hover:bg-red-600 transition-colors"
+            onClick={() => window.location.replace('/login')}
+            className="mt-2 rounded-lg bg-red-500 px-4 py-2 text-xs font-medium text-white hover:bg-red-600 transition-colors cursor-pointer"
           >
-            Tải lại trang
+            Vào trang Đăng nhập ngay
           </button>
         )}
       </div>

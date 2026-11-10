@@ -16,11 +16,11 @@ export default function DashboardLayout({
   useEffect(() => {
     const token = localStorage.getItem('sales_zalo_token');
     if (!token) {
-      router.replace('/login');
+      window.location.replace('/login');
     } else {
       setIsAuthorized(true);
     }
-  }, [router]);
+  }, []);
 
   if (!isAuthorized) {
     return (

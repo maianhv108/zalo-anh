@@ -1,2 +1,2 @@
 Set WshShell = CreateObject("WScript.Shell")
-WshShell.Run "node ""d:\sales-zalo-project-docs\scripts\launcher.js""", 0, False
+WshShell.Run "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""D:\sales-zalo-project-docs\scripts\start-all.ps1"" -OpenBrowser:$false", 0, False
