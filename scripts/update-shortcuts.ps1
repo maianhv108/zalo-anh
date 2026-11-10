@@ -1,4 +1,4 @@
-﻿$w = New-Object -ComObject WScript.Shell
+$w = New-Object -ComObject WScript.Shell
 $desktop = 'C:\Users\ASUS\OneDrive\Máy tính'
 
 # 1. Update TourLuk Tool Zalo.lnk
@@ -30,3 +30,4 @@ if (Test-Path $startup) {
 }
 
 Write-Output "Shortcuts configured successfully!"
+

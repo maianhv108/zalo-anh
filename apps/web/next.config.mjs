@@ -5,7 +5,6 @@ const nextConfig = {
   // Fix lỗi "multiple modules with names that only differ in casing" trên Windows
   webpack: (config) => {
     config.resolve.symlinks = false;
-    config.cache = false;
     return config;
   },
   async rewrites() {

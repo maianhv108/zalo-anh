@@ -53,6 +53,9 @@ export default function LoginPage() {
             <img
               src="/logo.jpg"
               alt="TourLuk Tool Zalo"
+              width={48}
+              height={48}
+              style={{ width: '48px', height: '48px', maxWidth: '48px', maxHeight: '48px' }}
               className="h-12 w-12 rounded-full border-2 border-red-500/60 object-cover shadow-lg shadow-red-500/40 shrink-0"
             />
             <div>
