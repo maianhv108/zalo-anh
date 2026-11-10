@@ -188,12 +188,14 @@ export function TourArticleWorkflow() {
       });
       const publishedText = updated?.zaloArticleUrl
         ? ` Đã tự động xuất bản trực tiếp lên Zalo OA TourLuk!`
-        : ` Bài đã được chuyển sang mục "Đã Duyệt Đăng Bài".`;
+        : ` Bài đã được lưu vào danh mục "Đã Duyệt Đăng Bài".`;
       setNotification({
         type: 'success',
         message: `✅ Đã duyệt thành công bài viết ${articleId}!${publishedText}`,
       });
-      await loadArticles(undefined, selectedArticleId);
+      // Tự động chuyển tab sang 'APPROVED' để chị nhìn thấy ngay bài vừa duyệt
+      setActiveTab('APPROVED');
+      await loadArticles('APPROVED', articleId);
     } catch (e: any) {
       setNotification({ type: 'error', message: e.message || 'Lỗi khi duyệt bài viết.' });
     } finally {
