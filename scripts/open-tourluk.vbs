@@ -1,2 +1,9 @@
 Set WshShell = CreateObject("WScript.Shell")
-WshShell.Run "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ""D:\sales-zalo-project-docs\scripts\start-all.ps1"" -OpenBrowser:$true", 0, False
+projectRoot = "D:\sales-zalo-project-docs"
+
+' 1. Dam bao ca 2 service API va Web deu dang chay
+WshShell.Run "wscript.exe """ & projectRoot & "\scripts\autostart.vbs""", 0, True
+
+' 2. Cho 1.5 giay va mo trinh duyet vao TourLuk CRM
+WScript.Sleep 1500
+WshShell.Run "http://localhost:3000"
