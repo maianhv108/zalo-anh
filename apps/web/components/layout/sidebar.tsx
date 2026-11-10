@@ -55,11 +55,12 @@ const navigationSections: NavSection[] = [
     title: 'Quản lý Đăng bài & Nội dung',
     items: [
       {
-        name: 'Duyệt bài viết Tour (Sheet & Drive)',
+        name: 'Bài đăng Zalo OA (Tour)',
         href: '/posts?tab=workflow',
         icon: ScrollText,
-        badge: 'Chờ duyệt',
+        badge: 'OA',
         badgeColor: 'bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-600/40',
+        isOa: true,
       },
       { name: 'Kế hoạch Tour & Ảnh Drive', href: '/posts?tab=tour', icon: FileSpreadsheet, isOa: true },
       { name: 'Soạn bài & Hẹn giờ OA', href: '/posts?tab=oa', icon: Building2, isOa: true },

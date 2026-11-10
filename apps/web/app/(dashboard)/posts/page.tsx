@@ -396,7 +396,7 @@ function PostsContent() {
           }`}
         >
           <ScrollText className="h-4 w-4" />
-          <span>✍️ Duyệt Bài Đăng Tour (Từ Sheet & Drive)</span>
+          <span>✍️ Bài Đăng Zalo OA (Sheet & Drive)</span>
           <span
             className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
               activeTab === 'workflow'
@@ -404,7 +404,7 @@ function PostsContent() {
                 : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300'
             }`}
           >
-            Chờ Duyệt
+            Tour OA
           </span>
         </button>
 

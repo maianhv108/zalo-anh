@@ -116,20 +116,26 @@ export class TourOaArticlesService {
 
     let all = Array.from(this.articlesMap.values());
 
-    // Thống kê số lượng theo từng tab riêng biệt
-    const pendingApprovalCount = all.filter((a) => a.status === 'PENDING_APPROVAL').length;
-    const revisedPendingCount = all.filter((a) => a.status === 'REVISED_PENDING').length;
+    // Thống kê số lượng theo 4 tab chính xác theo yêu cầu:
+    // 1. Tất cả bài đăng Zalo OA
+    // 2. Bài đăng đã được duyệt
+    // 3. Bài đăng chưa được duyệt
+    // 4. Bài đã được đăng lên Zalo OA
+    const unapprovedCount = all.filter((a) => a.status === 'PENDING_APPROVAL' || a.status === 'REVISED_PENDING').length;
     const approvedCount = all.filter((a) => a.status === 'APPROVED').length;
-    const publishedCount = all.filter((a) => a.status === 'PUBLISHED').length;
+    const publishedCount = all.filter((a) => a.status === 'PUBLISHED' || !!a.zaloArticleUrl).length;
+    const totalCount = all.length;
 
     if (status && status !== 'ALL') {
-      if (status === 'PENDING_APPROVAL') {
-        // Tab Chờ Duyệt hiển thị toàn bộ bài chờ duyệt (cả bài mới và bài vừa sửa)
+      if (status === 'UNAPPROVED' || status === 'PENDING_APPROVAL') {
+        // Tab: Bài đăng chưa được duyệt (gồm bài chờ duyệt lần đầu & bài đã sửa)
         all = all.filter((a) => a.status === 'PENDING_APPROVAL' || a.status === 'REVISED_PENDING');
-      } else if (status === 'PUBLISHED') {
-        all = all.filter((a) => a.status === 'PUBLISHED');
       } else if (status === 'APPROVED') {
+        // Tab: Bài đăng đã được duyệt (chờ đăng OA)
         all = all.filter((a) => a.status === 'APPROVED');
+      } else if (status === 'PUBLISHED') {
+        // Tab: Bài đã được đăng lên Zalo OA
+        all = all.filter((a) => a.status === 'PUBLISHED' || !!a.zaloArticleUrl);
       } else {
         all = all.filter((a) => a.status === status);
       }
@@ -147,16 +153,23 @@ export class TourOaArticlesService {
       );
     }
 
-    // Sắp xếp: bài mới sửa hoặc mới tạo lên đầu
-    all.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    // Sắp xếp bài viết theo đúng thứ tự mã bài (ZA-001 -> ZA-012)
+    all.sort((a, b) => {
+      const numA = parseInt(a.id.replace(/\D/g, ''), 10) || 0;
+      const numB = parseInt(b.id.replace(/\D/g, ''), 10) || 0;
+      if (numA !== numB) return numA - numB;
+      return a.id.localeCompare(b.id);
+    });
 
     return {
       articles: all,
       counts: {
-        total: this.articlesMap.size,
-        pendingApproval: pendingApprovalCount,
-        revisedPending: revisedPendingCount,
+        total: totalCount,
+        all: totalCount,
         approved: approvedCount,
+        unapproved: unapprovedCount,
+        pendingApproval: unapprovedCount,
+        revisedPending: all.filter((a) => a.status === 'REVISED_PENDING').length,
         published: publishedCount,
       },
     };

@@ -91,16 +91,15 @@ export interface TourOaArticle {
   zaloArticleUrl?: string;
 }
 
+export type ArticleWorkflowTab = 'ALL' | 'APPROVED' | 'UNAPPROVED' | 'PUBLISHED';
+
 export function TourArticleWorkflow() {
-  const [activeTab, setActiveTab] = useState<'PENDING_APPROVAL' | 'REVISED_PENDING' | 'APPROVED' | 'PUBLISHED' | 'ALL'>(
-    'PENDING_APPROVAL',
-  );
+  const [activeTab, setActiveTab] = useState<ArticleWorkflowTab>('ALL');
   const [articles, setArticles] = useState<TourOaArticle[]>([]);
   const [counts, setCounts] = useState({
     total: 0,
-    pendingApproval: 0,
-    revisedPending: 0,
     approved: 0,
+    unapproved: 0,
     published: 0,
   });
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
@@ -142,11 +141,18 @@ export function TourArticleWorkflow() {
       const tab = statusTab || activeTab;
       const res = await fetchApi<{
         articles: TourOaArticle[];
-        counts: { total: number; pendingApproval: number; revisedPending: number; approved: number; published: number };
+        counts: { total: number; approved: number; unapproved: number; published: number };
       }>(`/tour-content/articles?status=${tab}&search=${encodeURIComponent(searchQuery)}`);
 
       setArticles(res.articles || []);
-      setCounts(res.counts || { total: 0, pendingApproval: 0, revisedPending: 0, approved: 0, published: 0 });
+      setCounts(
+        res.counts || {
+          total: 0,
+          approved: 0,
+          unapproved: 0,
+          published: 0,
+        },
+      );
 
       const targetId = keepArticleId || selectedArticleId;
       // Giữ đúng bài đang chọn hoặc bài vừa sửa (không nhảy về bài đầu tiên)
@@ -192,7 +198,7 @@ export function TourArticleWorkflow() {
       const isPublished = updated?.status === 'PUBLISHED' || !!updated?.zaloArticleUrl;
       const publishedText = isPublished
         ? ` Đã tự động xuất bản trực tiếp lên Zalo OA TourLuk!`
-        : ` Bài đã được lưu vào danh mục "Đã Duyệt Đăng Bài".`;
+        : ` Bài đã được lưu vào danh mục "Bài Đăng Đã Được Duyệt".`;
       setNotification({
         type: 'success',
         message: `✅ Đã duyệt thành công bài viết ${articleId}!${publishedText}`,
@@ -236,7 +242,7 @@ export function TourArticleWorkflow() {
     }
   };
 
-  // 3. Thao tác YÊU CẦU SỬA -> Tự động sửa và chuyển sang "Chờ duyệt lại"
+  // 3. Thao tác YÊU CẦU SỬA -> Tự động sửa và chuyển sang "Bài đăng chưa được duyệt"
   const handleSubmitRevision = async () => {
     if (!selectedArticleId || !revisionNote.trim()) {
       setNotification({ type: 'error', message: 'Vui lòng nhập ghi chú yêu cầu sửa.' });
@@ -252,11 +258,10 @@ export function TourArticleWorkflow() {
       setRevisionNote('');
       setNotification({
         type: 'success',
-        message: `🔄 Hệ thống đã tự động sửa bài ${selectedArticleId} theo yêu cầu và chuyển sang mục "Chờ Duyệt Lại"!`,
+        message: `🔄 Hệ thống đã tự động sửa bài ${selectedArticleId} theo yêu cầu!`,
       });
-      // Tự động chuyển tab sang Chờ Duyệt Lại để chị kiểm tra ngay
-      setActiveTab('REVISED_PENDING');
-      await loadArticles('REVISED_PENDING', selectedArticleId);
+      setActiveTab('UNAPPROVED');
+      await loadArticles('UNAPPROVED', selectedArticleId);
     } catch (e: any) {
       setNotification({ type: 'error', message: e.message || 'Lỗi khi gửi yêu cầu sửa bài.' });
     } finally {
@@ -372,8 +377,8 @@ export function TourArticleWorkflow() {
         type: 'success',
         message: 'Đã tạo mới và đồng bộ lại 12 bài viết Zalo OA từ Google Sheets & Drive!',
       });
-      setActiveTab('PENDING_APPROVAL');
-      await loadArticles('PENDING_APPROVAL');
+      setActiveTab('ALL');
+      await loadArticles('ALL');
     } catch (e: any) {
       setNotification({ type: 'error', message: e.message || 'Lỗi khi tạo mới bài viết.' });
     } finally {
@@ -419,52 +424,33 @@ export function TourArticleWorkflow() {
       )}
 
       {/* ========================================================================= */}
-      {/* 🌟 THANH ĐIỀU HƯỚNG WORKFLOW 3 TAB CHÍNH */}
+      {/* 🌟 THANH ĐIỀU HƯỚNG BÀI ĐĂNG ZALO OA (4 TAB CHÍNH XÁC THEO YÊU CẦU) */}
       {/* ========================================================================= */}
       <div className="bg-white dark:bg-[#0b1329]/90 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm dark:shadow-xl backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors">
-        {/* Nhóm 3 Tab quy trình */}
+        {/* Nhóm 4 Tab bài đăng Zalo OA */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Tab 1: Chờ Duyệt */}
+          {/* Tab 1: Tất Cả Bài Đăng Zalo OA (Sắp xếp theo thứ tự mã bài ZA-001 -> ZA-012) */}
           <button
-            onClick={() => setActiveTab('PENDING_APPROVAL')}
+            onClick={() => setActiveTab('ALL')}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
-              activeTab === 'PENDING_APPROVAL'
-                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30 scale-105'
+              activeTab === 'ALL'
+                ? 'bg-slate-900 text-white shadow-md shadow-slate-900/30 scale-105 border border-slate-700 dark:bg-slate-800'
                 : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200/80 dark:bg-slate-900/80 dark:text-slate-300 dark:border-slate-800 dark:hover:bg-slate-800'
             }`}
+            title="Tất cả bài đăng Zalo OA: bao gồm bài được duyệt, chưa được duyệt, đã đăng OA (Sắp xếp theo thứ tự mã bài ZA-001 -> ZA-012)"
           >
-            <Clock className="w-3.5 h-3.5" />
-            <span>Chờ Duyệt</span>
+            <Layers className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Tất Cả Bài Đăng Zalo OA</span>
             <span
               className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black ${
-                activeTab === 'PENDING_APPROVAL' ? 'bg-black/30 text-white' : 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-400'
+                activeTab === 'ALL' ? 'bg-indigo-500 text-white' : 'bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-300'
               }`}
             >
-              {counts.pendingApproval}
+              {counts.total}
             </span>
           </button>
 
-          {/* Tab 2: Chờ Duyệt Lại (Những bài đã sửa theo yêu cầu) */}
-          <button
-            onClick={() => setActiveTab('REVISED_PENDING')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
-              activeTab === 'REVISED_PENDING'
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 scale-105'
-                : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200/80 dark:bg-slate-900/80 dark:text-slate-300 dark:border-slate-800 dark:hover:bg-slate-800'
-            }`}
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Chờ Duyệt Lại</span>
-            <span
-              className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black ${
-                activeTab === 'REVISED_PENDING' ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-300'
-              }`}
-            >
-              {counts.revisedPending}
-            </span>
-          </button>
-
-          {/* Tab 3: Đã Duyệt Chờ Đăng */}
+          {/* Tab 2: Bài Đăng Đã Được Duyệt */}
           <button
             onClick={() => setActiveTab('APPROVED')}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
@@ -472,19 +458,41 @@ export function TourArticleWorkflow() {
                 ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-105'
                 : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200/80 dark:bg-slate-900/80 dark:text-slate-300 dark:border-slate-800 dark:hover:bg-slate-800'
             }`}
+            title="Các bài đăng đã được duyệt, sẵn sàng đăng lên Zalo OA"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Đã Duyệt</span>
+            <span>Bài Đăng Đã Được Duyệt</span>
             <span
               className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black ${
-                activeTab === 'APPROVED' ? 'bg-white/20 text-white' : 'bg-emerald-500/20 text-emerald-300'
+                activeTab === 'APPROVED' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300'
               }`}
             >
               {counts.approved}
             </span>
           </button>
 
-          {/* Tab 4: Đã Đăng Lên Zalo OA */}
+          {/* Tab 3: Bài Đăng Chưa Được Duyệt */}
+          <button
+            onClick={() => setActiveTab('UNAPPROVED')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
+              activeTab === 'UNAPPROVED'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30 scale-105'
+                : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200/80 dark:bg-slate-900/80 dark:text-slate-300 dark:border-slate-800 dark:hover:bg-slate-800'
+            }`}
+            title="Các bài đăng chưa được duyệt: bao gồm bài chờ duyệt lần đầu và bài đã sửa chờ duyệt lại"
+          >
+            <Clock className="w-3.5 h-3.5" />
+            <span>Bài Đăng Chưa Được Duyệt</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black ${
+                activeTab === 'UNAPPROVED' ? 'bg-black/30 text-white' : 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-400'
+              }`}
+            >
+              {counts.unapproved}
+            </span>
+          </button>
+
+          {/* Tab 4: Bài Đã Được Đăng Lên Zalo OA */}
           <button
             onClick={() => setActiveTab('PUBLISHED')}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
@@ -492,28 +500,17 @@ export function TourArticleWorkflow() {
                 ? 'bg-[#0068ff] text-white shadow-md shadow-blue-500/30 scale-105'
                 : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200/80 dark:bg-slate-900/80 dark:text-slate-300 dark:border-slate-800 dark:hover:bg-slate-800'
             }`}
+            title="Các bài đã được xuất bản chính thức lên Zalo OA kèm link bài viết"
           >
             <Globe className="w-3.5 h-3.5" />
-            <span>Đã Đăng Zalo OA</span>
+            <span>Bài Đã Được Đăng Lên Zalo OA</span>
             <span
               className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black ${
-                activeTab === 'PUBLISHED' ? 'bg-white/20 text-white' : 'bg-blue-500/20 text-blue-300'
+                activeTab === 'PUBLISHED' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300'
               }`}
             >
               {counts.published}
             </span>
-          </button>
-
-          {/* Tab 5: Tất Cả */}
-          <button
-            onClick={() => setActiveTab('ALL')}
-            className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-              activeTab === 'ALL'
-                ? 'bg-slate-900 text-white border border-slate-700 dark:bg-slate-800'
-                : 'text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100/80 dark:bg-transparent border border-slate-200 dark:border-transparent'
-            }`}
-          >
-            Tất Cả ({counts.total})
           </button>
         </div>
 
@@ -638,12 +635,12 @@ export function TourArticleWorkflow() {
                               <Check className="w-3 h-3" /> Đã duyệt
                             </span>
                           ) : art.status === 'REVISED_PENDING' ? (
-                            <span className="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 px-1.5 py-0.5 rounded font-semibold flex items-center gap-1 animate-pulse">
+                            <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-semibold flex items-center gap-1 animate-pulse">
                               <RotateCcw className="w-3 h-3" /> Đã sửa ({art.revisionCount})
                             </span>
                           ) : (
                             <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-semibold flex items-center gap-1">
-                              <Clock className="w-3 h-3" /> Chờ duyệt
+                              <Clock className="w-3 h-3" /> Chưa duyệt
                             </span>
                           )}
                         </div>
@@ -694,8 +691,6 @@ export function TourArticleWorkflow() {
                             ? 'text-blue-400'
                             : selectedArticle.status === 'APPROVED'
                             ? 'text-emerald-400'
-                            : selectedArticle.status === 'REVISED_PENDING'
-                            ? 'text-indigo-400'
                             : 'text-amber-400'
                         }
                       >
@@ -704,8 +699,8 @@ export function TourArticleWorkflow() {
                           : selectedArticle.status === 'APPROVED'
                           ? 'Đã Duyệt (Sẵn sàng đăng OA)'
                           : selectedArticle.status === 'REVISED_PENDING'
-                          ? `Chờ Duyệt Lại (Đã sửa theo yêu cầu)`
-                          : 'Đang Chờ Duyệt Lần Đầu'}
+                          ? `Chưa Duyệt (Đã sửa theo yêu cầu)`
+                          : 'Chưa Duyệt'}
                       </strong>
                     </p>
                   </div>
