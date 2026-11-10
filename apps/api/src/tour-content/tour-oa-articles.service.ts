@@ -359,6 +359,128 @@ export class TourOaArticlesService {
   }
 
   /**
+   * Chuyển đổi nội dung văn bản bài viết thành danh sách các khối body Zalo OA chuẩn đẹp:
+   * - Tách từng đoạn văn bản thành block riêng biệt <p style="text-align: justify;">...</p>
+   * - Tiêu đề mục được in đậm rõ ràng với <p style="text-align: justify;"><strong>...</strong></p>
+   * - Trích dẫn / Lời mở đầu (Hook/Lead) được đóng khung blockquote trang nhã: <blockquote><p>...</p></blockquote>
+   * - Số hotline 0819 190 101 và đường link website https://tourluk.com/au/ được làm nổi bật với gạch chân và in đậm
+   * - Ảnh thực tế chuyến đi được chèn xen kẽ đúng vị trí với chú thích đầy đủ
+   */
+  public convertContentToZaloBodyBlocks(
+    content: string,
+    galleryImages: any[] = [],
+    coverImage?: any,
+  ): Array<{ type: 'text' | 'image'; content?: string; url?: string; caption?: string }> {
+    const blocks: Array<{ type: 'text' | 'image'; content?: string; url?: string; caption?: string }> = [];
+    if (!content) return blocks;
+
+    // Tách thành các khối văn bản theo 2 hoặc nhiều dấu xuống dòng
+    const rawParagraphs = content.split(/\n\s*\n+/);
+    let galleryIdx = 0;
+
+    for (const raw of rawParagraphs) {
+      const trimmed = raw.trim();
+      if (!trimmed) continue;
+
+      // 1. Kiểm tra nếu là thẻ chèn ảnh inline: 📸 [HÌNH_ẢNH_1: Caption] hoặc [HÌNH_ẢNH_1: Caption]
+      const imgMatch = trimmed.match(/📸?\s*\[HÌNH_ẢNH_(\d+):\s*([^\]]+)\]/);
+      if (imgMatch) {
+        const idx = parseInt(imgMatch[1], 10) - 1;
+        const caption = imgMatch[2].trim();
+        const imgObj = galleryImages[idx] || galleryImages[galleryIdx] || coverImage;
+        const url =
+          imgObj?.thumbnailUrl ||
+          'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=1000&q=80';
+        blocks.push({
+          type: 'image',
+          url,
+          caption: caption.slice(0, 200),
+        });
+        galleryIdx++;
+        continue;
+      }
+
+      // 2. Bỏ qua các đường kẻ ngang phân cách (ví dụ ━━━━━━━━━━━━━━━━━━━━━)
+      if (/^[━─—\-_=]{3,}$/.test(trimmed)) {
+        continue;
+      }
+
+      // 3. Khung trích dẫn mở đầu (Hook / Lead)
+      if (
+        trimmed.startsWith('✨ Dành riêng') ||
+        trimmed.startsWith('🌟 ') ||
+        trimmed.startsWith('Cùng TourLuk')
+      ) {
+        blocks.push({
+          type: 'text',
+          content: `<blockquote>\n <p style="text-align: justify;"><span><span>${this.formatInlineHtml(trimmed)}</span></span></p>\n</blockquote>`,
+        });
+        continue;
+      }
+
+      // 4. Tiêu đề các mục lớn (Ngày, số thứ tự, biểu tượng emoji + chữ in hoa, hoặc bắt đầu bằng **)
+      const isMarkdownBoldHeading = trimmed.startsWith('**') && trimmed.endsWith('**');
+      const cleanHeading = trimmed.replace(/^\*\*|\*\*$/g, '').trim();
+      const isHeadingPattern =
+        /^([💡💎🎯📋⚠️💳👗🌟📌🍁🌉💙✈️👉]|NGÀY\s+\d+|[0-9]+\.\s+)/i.test(cleanHeading) &&
+        cleanHeading.length < 160 &&
+        !cleanHeading.includes('\n');
+
+      if (isMarkdownBoldHeading || isHeadingPattern) {
+        blocks.push({
+          type: 'text',
+          content: `<p style="text-align: justify;"><span><strong><span>${this.formatInlineHtml(cleanHeading)}</span></strong></span></p>`,
+        });
+        continue;
+      }
+
+      // 5. Dòng liên kết TourLuk và Hotline
+      if (
+        trimmed.includes('https://tourluk.com') ||
+        trimmed.includes('0819 190 101') ||
+        trimmed.toLowerCase().includes('hotline')
+      ) {
+        let lineHtml = this.formatInlineHtml(trimmed);
+        lineHtml = lineHtml.replace(
+          /(https:\/\/tourluk\.com[^\s<]+)/g,
+          `<span style="text-decoration-line: underline;">$1</span>`,
+        );
+        lineHtml = lineHtml.replace(
+          /(0819\s*190\s*101)/g,
+          `<strong>$1</strong>`,
+        );
+        blocks.push({
+          type: 'text',
+          content: `<p style="text-align: justify;"><span><strong>${lineHtml}</strong></span></p>`,
+        });
+        continue;
+      }
+
+      // 6. Dòng Hashtags
+      if (trimmed.startsWith('#')) {
+        blocks.push({
+          type: 'text',
+          content: `<p style="text-align: justify;"><span><span>${this.formatInlineHtml(trimmed)}</span></span></p>`,
+        });
+        continue;
+      }
+
+      // 7. Đoạn văn bản nội dung thông thường
+      const formattedText = this.formatInlineHtml(trimmed);
+      blocks.push({
+        type: 'text',
+        content: `<p style="text-align: justify;"><span><span>${formattedText}</span></span></p>`,
+      });
+    }
+
+    return blocks;
+  }
+
+  private formatInlineHtml(str: string): string {
+    return str.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  }
+
+  /**
    * Đăng bài viết trực tiếp lên Zalo Official Account qua OpenAPI v2
    */
   async publishToZaloOa(id: string): Promise<{ success: boolean; zaloArticleId?: string; zaloArticleUrl?: string; message?: string }> {
@@ -370,31 +492,12 @@ export class TourOaArticlesService {
 
     try {
       const doCreateArticle = async (authToken: string) => {
-        // 1. Phân tích nội dung và tách thành các khối body Zalo (text & image)
-        const bodyBlocks: Array<{ type: 'text' | 'image'; content?: string; url?: string; caption?: string }> = [];
-        const parts = article.content.split(/(\[HÌNH_ẢNH[^\]]+\])/g);
-        let galleryIndex = 0;
-
-        for (const part of parts) {
-          if (!part.trim()) continue;
-          const imgMatch = part.match(/\[HÌNH_ẢNH_\d+:\s*([^\]]+)\]/);
-          if (imgMatch) {
-            const caption = imgMatch[1].trim();
-            const imgObj = article.galleryImages?.[galleryIndex] || article.coverImage;
-            const imgUrl = imgObj?.thumbnailUrl || 'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=1000&q=80';
-            bodyBlocks.push({
-              type: 'image',
-              url: imgUrl,
-              caption: caption.slice(0, 200),
-            });
-            galleryIndex++;
-          } else {
-            bodyBlocks.push({
-              type: 'text',
-              content: part.trim(),
-            });
-          }
-        }
+        // 1. Phân tích nội dung và tách thành các khối body Zalo chuẩn đẹp theo từng đoạn, in đậm, trích dẫn
+        const bodyBlocks = this.convertContentToZaloBodyBlocks(
+          article.content,
+          article.galleryImages,
+          article.coverImage,
+        );
 
         // 2. Chuẩn bị ảnh bìa
         const coverUrl = article.coverImage?.thumbnailUrl || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80';
@@ -409,7 +512,7 @@ export class TourOaArticlesService {
             status: 'show',
           },
           description: (article.excerpt || article.title).slice(0, 300),
-          body: bodyBlocks.length > 0 ? bodyBlocks : [{ type: 'text', content: article.content }],
+          body: bodyBlocks.length > 0 ? bodyBlocks : [{ type: 'text', content: `<p style="text-align: justify;">${article.content}</p>` }],
           status: 'show', // Xuất bản công khai lên Zalo OA
           comment: 'show',
         };
@@ -444,17 +547,19 @@ export class TourOaArticlesService {
         throw new Error(resData.message || 'Lỗi từ Zalo API');
       }
 
-      // 4. Lấy ID bài viết mới tạo bằng cách query article/getslice
+      // 4. Lấy ID và link bài viết mới tạo bằng cách query article/getslice
       await new Promise((r) => setTimeout(r, 1500));
-      const sliceRes = await fetch('https://openapi.zalo.me/v2.0/article/getslice?offset=0&limit=3&type=normal', {
+      const sliceRes = await fetch('https://openapi.zalo.me/v2.0/article/getslice?offset=0&limit=5&type=normal', {
         headers: { access_token: token },
       });
       const sliceData = (await sliceRes.json()) as any;
-      const latestArticle = sliceData.data?.medias?.[0];
+      const matchedArticle =
+        sliceData.data?.medias?.find((m: any) => m.title?.trim() === article.title?.trim()) ||
+        sliceData.data?.medias?.[0];
 
-      const zaloArticleId = latestArticle?.id || resData.data?.token || 'pending';
+      const zaloArticleId = matchedArticle?.id || resData.data?.token || 'pending';
       const pageId = process.env.ZALO_OA_ID || '4585991630126061653';
-      const zaloArticleUrl = latestArticle?.link_view || `https://post.oa.zalo.me/d/${pageId}?id=${zaloArticleId}&pageId=${pageId}`;
+      const zaloArticleUrl = matchedArticle?.link_view || `https://post.oa.zalo.me/d/${pageId}?id=${zaloArticleId}&pageId=${pageId}`;
 
       // 5. Cập nhật bài viết trong hệ thống
       article.status = 'PUBLISHED';

@@ -467,7 +467,7 @@ export function generateArticleFromBlueprint(
 
   blueprint.sections.forEach((sec, idx) => {
     if (sec.heading) {
-      content += `${sec.heading}\n`;
+      content += `**${sec.heading}**\n\n`;
     }
     content += `${sec.text}\n\n`;
 
@@ -481,10 +481,10 @@ export function generateArticleFromBlueprint(
   });
 
   content += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
-  content += `👉 ${blueprint.cta}\n\n`;
-  content += `🌐 Khám phá các tour du lịch Úc của TourLuk tại: https://tourluk.com/au/\n`;
-  content += `☎️ Hotline / Zalo tư vấn 24/7: 0819 190 101\n`;
-  content += `📲 Nhắn tin trực tiếp qua Zalo OA của TourLuk hoặc bấm nút "Quan tâm" ngay bên dưới để chuyên viên gửi trọn bộ thông tin và tư vấn miễn phí cho chuyến đi của bạn!\n\n`;
+  content += `👉 **${blueprint.cta}**\n\n`;
+  content += `🌐 **Khám phá các tour du lịch Úc của TourLuk tại:** https://tourluk.com/au/\n\n`;
+  content += `☎️ **Hotline / Zalo tư vấn 24/7:** 0819 190 101\n\n`;
+  content += `📲 Nhắn tin trực tiếp qua Zalo OA của TourLuk hoặc bấm nút "Quan tâm" ngay bên dưới để chuyên viên gửi trọn bộ lịch trình và tư vấn miễn phí cho bạn!\n\n`;
 
   content += blueprint.hashtags.map((t) => `#${t}`).join(' ');
 

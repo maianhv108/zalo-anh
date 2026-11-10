@@ -30,6 +30,7 @@ import {
   Award,
   Copy,
   Globe,
+  PhoneCall,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -964,36 +965,46 @@ export function TourArticleWorkflow() {
                           <span className="text-blue-400 font-semibold">{selectedArticle.destination}</span>
                         </div>
 
-                        {/* Đoạn Hook mở đầu */}
-                        <div className="p-3 bg-indigo-950/40 border-l-4 border-indigo-500 rounded-r-xl text-[11px] text-indigo-100 italic leading-relaxed">
-                          {selectedArticle.hook}
-                        </div>
-
-                        {/* Thân bài viết Zalo OA hoàn chỉnh xen kẽ ảnh thực tế */}
-                        <div className="space-y-3 text-[11px] leading-relaxed text-slate-300 font-sans">
+                        {/* Thân bài viết Zalo OA hoàn chỉnh xen kẽ ảnh thực tế, có in đậm và tách đoạn rõ ràng */}
+                        <div className="space-y-2 text-xs leading-relaxed text-slate-200 font-sans">
                           {(() => {
                             const content = selectedArticle.content || '';
                             const gallery = selectedArticle.galleryImages || [];
-                            const imageRegex = /📸 \[HÌNH_ẢNH_(\d+): ([^\]]+)\]/g;
+                            const imageRegex = /📸?\s*\[HÌNH_ẢNH_(\d+):\s*([^\]]+)\]/g;
+
+                            // Hàm phân giải markdown in đậm **text**
+                            const renderInlineMarkdown = (text: string) => {
+                              const parts = text.split(/(\*\*[^*]+\*\*)/g);
+                              return parts.map((part, pIdx) => {
+                                if (part.startsWith('**') && part.endsWith('**')) {
+                                  return (
+                                    <strong key={pIdx} className="font-bold text-white">
+                                      {part.slice(2, -2)}
+                                    </strong>
+                                  );
+                                }
+                                return part;
+                              });
+                            };
 
                             // Hàm tô sáng trực quan đoạn văn bản vừa được AI viết lại
                             const renderParagraphWithHighlight = (text: string) => {
                               const needle = (recentlyRewrittenText || '').trim();
                               if (!needle || !text.includes(needle)) {
-                                return text;
+                                return renderInlineMarkdown(text);
                               }
                               const chunks = text.split(needle);
                               return (
                                 <>
                                   {chunks.map((chunk, cIdx) => (
                                     <React.Fragment key={cIdx}>
-                                      {chunk}
+                                      {renderInlineMarkdown(chunk)}
                                       {cIdx < chunks.length - 1 && (
-                                        <span className="inline-block bg-emerald-500/25 border-l-2 border-emerald-400 text-emerald-200 px-2 py-1 rounded my-1 shadow-md ring-1 ring-emerald-500/50 animate-pulse">
+                                        <span className="inline-block bg-emerald-500/25 border-l-2 border-emerald-400 text-emerald-200 px-2 py-1 rounded my-1 shadow-md ring-1 ring-emerald-500/50 animate-pulse font-medium">
                                           <span className="inline-flex items-center gap-1 text-[9px] bg-emerald-600 text-white font-bold px-1.5 py-0.5 rounded-full mr-1.5 uppercase tracking-wider">
                                             ✨ Đoạn vừa sửa mới
                                           </span>
-                                          {needle}
+                                          {renderInlineMarkdown(needle)}
                                         </span>
                                       )}
                                     </React.Fragment>
@@ -1002,112 +1013,170 @@ export function TourArticleWorkflow() {
                               );
                             };
 
-                            // Kiểm tra xem bài có thẻ ảnh inline không
-                            const hasInlineTags = imageRegex.test(content);
-                            imageRegex.lastIndex = 0; // reset regex index
+                            // Tách toàn bộ nội dung thành các khối đoạn văn bản độc lập
+                            const rawBlocks = content.split(/\n\s*\n+/);
+                            const renderedElements: React.ReactNode[] = [];
+                            let galleryIdx = 0;
 
-                            if (!hasInlineTags) {
-                              return (
-                                <>
-                                  <div className="whitespace-pre-line">{renderParagraphWithHighlight(content)}</div>
-                                  {gallery.length > 0 && (
-                                    <div className="space-y-1.5 pt-2">
-                                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
-                                        <ImageIcon className="w-3.5 h-3.5 text-indigo-400" />
-                                        Ảnh Thực Tế Chuyến Đi ({gallery.length} ảnh):
-                                      </div>
-                                      <div className="grid grid-cols-2 gap-2">
-                                        {gallery.map((img, idx) => (
-                                          <div
-                                            key={idx}
-                                            className="h-24 rounded-lg overflow-hidden border border-slate-800 bg-slate-900 relative cursor-pointer hover:border-indigo-500 transition-all"
-                                            onClick={() => setPreviewImage(img.webViewLink || img.thumbnailUrl)}
-                                          >
-                                            <img
-                                              src={img.thumbnailUrl}
-                                              alt={img.name}
-                                              className="w-full h-full object-cover"
-                                              onError={(e) => {
-                                                (e.target as any).src =
-                                                  'https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?auto=format&fit=crop&w=400&q=80';
-                                              }}
-                                            />
-                                            <span className="absolute bottom-1 left-1 bg-black/70 text-[8px] text-slate-200 px-1 rounded truncate max-w-[90%]">
-                                              {img.name}
-                                            </span>
-                                          </div>
-                                        ))}
-                                      </div>
+                            rawBlocks.forEach((raw, bIdx) => {
+                              const trimmed = raw.trim();
+                              if (!trimmed) return;
+
+                              // 1. Kiểm tra nếu là ảnh xen kẽ
+                              const imgMatch = trimmed.match(/📸?\s*\[HÌNH_ẢNH_(\d+):\s*([^\]]+)\]/);
+                              if (imgMatch) {
+                                const idx = parseInt(imgMatch[1], 10) - 1;
+                                const caption = imgMatch[2].trim();
+                                const img = gallery[idx] || gallery[galleryIdx];
+                                galleryIdx++;
+
+                                renderedElements.push(
+                                  <div key={`img-block-${bIdx}`} className="my-3 space-y-1">
+                                    <div
+                                      className="rounded-xl overflow-hidden border border-slate-700/80 bg-slate-900 shadow-md relative cursor-pointer group hover:border-indigo-500 transition-all"
+                                      onClick={() => setPreviewImage(img?.webViewLink || img?.thumbnailUrl || null)}
+                                      title="Bấm để xem ảnh phóng to từ Google Drive"
+                                    >
+                                      {img?.thumbnailUrl ? (
+                                        <img
+                                          src={img.thumbnailUrl}
+                                          alt={caption}
+                                          className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-300"
+                                          onError={(e) => {
+                                            (e.target as any).src =
+                                              'https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?auto=format&fit=crop&w=600&q=80';
+                                          }}
+                                        />
+                                      ) : (
+                                        <div className="h-36 flex items-center justify-center bg-slate-800 text-slate-500">
+                                          <ImageIcon className="w-6 h-6" />
+                                        </div>
+                                      )}
+                                      <span className="absolute bottom-1.5 right-1.5 bg-black/75 backdrop-blur-sm text-[9px] text-slate-200 px-2 py-0.5 rounded-full font-medium">
+                                        🔍 Xem ảnh Drive
+                                      </span>
                                     </div>
-                                  )}
-                                </>
-                              );
-                            }
-
-                            // Render bài viết xen kẽ ảnh inline
-                            const parts: React.ReactNode[] = [];
-                            let lastIndex = 0;
-                            let match: RegExpExecArray | null;
-
-                            while ((match = imageRegex.exec(content)) !== null) {
-                              const textBefore = content.substring(lastIndex, match.index);
-                              if (textBefore.trim()) {
-                                parts.push(
-                                  <div key={`txt-${lastIndex}`} className="whitespace-pre-line">
-                                    {renderParagraphWithHighlight(textBefore)}
-                                  </div>,
+                                    <p className="text-[10px] text-center text-slate-400 italic font-medium px-2">
+                                      📸 {caption}
+                                    </p>
+                                  </div>
                                 );
+                                return;
                               }
 
-                              const imgIdx = parseInt(match[1], 10) - 1;
-                              const caption = match[2];
-                              const img = gallery[imgIdx];
+                              // 2. Bỏ qua đường kẻ ngang
+                              if (/^[━─—\-_=]{3,}$/.test(trimmed)) {
+                                renderedElements.push(<div key={`hr-${bIdx}`} className="my-2 border-t border-slate-800" />);
+                                return;
+                              }
 
-                              parts.push(
-                                <div key={`inline-img-${match.index}`} className="my-3 space-y-1">
-                                  <div
-                                    className="rounded-xl overflow-hidden border border-slate-700/80 bg-slate-900 shadow-md relative cursor-pointer group hover:border-indigo-500 transition-all"
-                                    onClick={() => setPreviewImage(img?.webViewLink || img?.thumbnailUrl || null)}
-                                    title="Bấm để xem ảnh phóng to từ Google Drive"
+                              // 3. Khung trích dẫn mở đầu (Hook / Lead) theo chuẩn Zalo OA (giống ảnh mẫu thực tế)
+                              if (
+                                trimmed.startsWith('✨ Dành riêng') ||
+                                trimmed.startsWith('🌟 ') ||
+                                trimmed.startsWith('Cùng TourLuk')
+                              ) {
+                                renderedElements.push(
+                                  <blockquote
+                                    key={`quote-${bIdx}`}
+                                    className="my-3 pl-3.5 pr-3 py-2.5 rounded-r-xl border-l-4 border-indigo-400 bg-slate-800/60 text-slate-200 text-xs italic leading-relaxed shadow-sm"
                                   >
-                                    {img?.thumbnailUrl ? (
-                                      <img
-                                        src={img.thumbnailUrl}
-                                        alt={caption}
-                                        className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-300"
-                                        onError={(e) => {
-                                          (e.target as any).src =
-                                            'https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?auto=format&fit=crop&w=600&q=80';
-                                        }}
-                                      />
-                                    ) : (
-                                      <div className="h-36 flex items-center justify-center bg-slate-800 text-slate-500">
-                                        <ImageIcon className="w-6 h-6" />
-                                      </div>
-                                    )}
-                                    <span className="absolute bottom-1.5 right-1.5 bg-black/75 backdrop-blur-sm text-[9px] text-slate-200 px-2 py-0.5 rounded-full font-medium">
-                                      🔍 Xem ảnh Drive
-                                    </span>
+                                    {renderParagraphWithHighlight(trimmed)}
+                                  </blockquote>
+                                );
+                                return;
+                              }
+
+                              // 4. Tiêu đề mục (In đậm, có emoji hoặc ngày)
+                              const isMarkdownBold = trimmed.startsWith('**') && trimmed.endsWith('**');
+                              const cleanHeading = trimmed.replace(/^\*\*|\*\*$/g, '').trim();
+                              const isHeadingPattern =
+                                /^([💡💎🎯📋⚠️💳👗🌟📌🍁🌉💙✈️👉]|NGÀY\s+\d+|[0-9]+\.\s+)/i.test(cleanHeading) &&
+                                cleanHeading.length < 160 &&
+                                !cleanHeading.includes('\n');
+
+                              if (isMarkdownBold || isHeadingPattern) {
+                                renderedElements.push(
+                                  <div key={`heading-${bIdx}`} className="pt-2.5 pb-1">
+                                    <h4 className="text-xs font-black text-white tracking-wide flex items-center gap-1.5 uppercase">
+                                      {renderParagraphWithHighlight(cleanHeading)}
+                                    </h4>
                                   </div>
-                                  <p className="text-[10px] text-center text-slate-400 italic font-medium px-2">
-                                    📸 {caption}
-                                  </p>
-                                </div>,
+                                );
+                                return;
+                              }
+
+                              // 5. Hotline tư vấn
+                              if (trimmed.includes('0819 190 101') || trimmed.toLowerCase().includes('hotline')) {
+                                renderedElements.push(
+                                  <div
+                                    key={`hotline-${bIdx}`}
+                                    className="p-2.5 my-2 rounded-xl bg-red-950/40 border border-red-500/40 text-xs text-red-200 flex items-center gap-2"
+                                  >
+                                    <PhoneCall className="w-4 h-4 text-red-400 shrink-0" />
+                                    <div>
+                                      <span>Hotline / Zalo tư vấn 24/7: </span>
+                                      <strong className="text-white font-black tracking-wider text-sm">0819 190 101</strong>
+                                    </div>
+                                  </div>
+                                );
+                                return;
+                              }
+
+                              // 6. Đường dẫn TourLuk
+                              if (trimmed.includes('https://tourluk.com')) {
+                                const urlMatch = trimmed.match(/(https:\/\/tourluk\.com[^\s]+)/);
+                                const url = urlMatch ? urlMatch[1] : 'https://tourluk.com/au/';
+                                renderedElements.push(
+                                  <div
+                                    key={`link-${bIdx}`}
+                                    className="p-2.5 my-2 rounded-xl bg-blue-950/40 border border-blue-500/40 text-xs text-blue-200 flex items-center justify-between gap-2"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <Globe className="w-4 h-4 text-blue-400 shrink-0" />
+                                      <span className="font-semibold">Khám phá tour trên TourLuk:</span>
+                                    </div>
+                                    <a
+                                      href={url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-[10px] flex items-center gap-1 underline underline-offset-2"
+                                    >
+                                      <span>Xem Tour</span>
+                                      <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                  </div>
+                                );
+                                return;
+                              }
+
+                              // 7. Thẻ Hashtags
+                              if (trimmed.startsWith('#')) {
+                                const tags = trimmed.split(/\s+/).filter(Boolean);
+                                renderedElements.push(
+                                  <div key={`tags-${bIdx}`} className="flex flex-wrap gap-1.5 pt-2">
+                                    {tags.map((tag, tIdx) => (
+                                      <span
+                                        key={tIdx}
+                                        className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 text-[10px] font-mono"
+                                      >
+                                        {tag}
+                                      </span>
+                                    ))}
+                                  </div>
+                                );
+                                return;
+                              }
+
+                              // 8. Đoạn văn bản nội dung thông thường (cách dòng rõ ràng)
+                              renderedElements.push(
+                                <p key={`p-${bIdx}`} className="text-xs leading-relaxed text-slate-300 my-1.5">
+                                  {renderParagraphWithHighlight(trimmed)}
+                                </p>
                               );
+                            });
 
-                              lastIndex = match.index + match[0].length;
-                            }
-
-                            const remainingText = content.substring(lastIndex);
-                            if (remainingText.trim()) {
-                              parts.push(
-                                <div key={`txt-${lastIndex}`} className="whitespace-pre-line">
-                                  {renderParagraphWithHighlight(remainingText)}
-                                </div>,
-                              );
-                            }
-
-                            return parts;
+                            return renderedElements;
                           })()}
                         </div>
 
