@@ -80,6 +80,18 @@ export class TourContentController {
     return this.tourOaArticlesService.publishToZaloOa(tourId);
   }
 
+  @Post('articles/:tourId/reset-publish')
+  @ApiOperation({ summary: 'Chuyển bài viết đã đăng về lại trạng thái Đã duyệt để đăng lại' })
+  async resetArticlePublish(@Param('tourId') tourId: string) {
+    return this.tourOaArticlesService.resetPublished(tourId);
+  }
+
+  @Post('articles/sync-oa')
+  @ApiOperation({ summary: 'Đồng bộ danh sách bài viết thực tế từ Zalo OA, tự động trả về Đã duyệt nếu bài bị xóa trên OA' })
+  async syncArticlesWithOa() {
+    return this.tourOaArticlesService.syncWithZaloOa();
+  }
+
   @Post('articles/:tourId/regenerate-selection')
   @ApiOperation({ summary: 'Viết lại đoạn văn bản được bôi đen (tô đen) bằng AI' })
   async regenerateSelection(

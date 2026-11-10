@@ -243,6 +243,53 @@ export function TourArticleWorkflow() {
     }
   };
 
+  // Thao tác Reset bài viết đã đăng về lại Đã Duyệt (để đăng lại bản mới nếu đã xóa trên Zalo OA)
+  const handleResetPublish = async (articleId: string) => {
+    setIsActionLoading(true);
+    try {
+      await fetchApi(`/tour-content/articles/${articleId}/reset-publish`, { method: 'POST' });
+      setNotification({
+        type: 'success',
+        message: '🔄 Đã chuyển bài viết về tab "Bài Đăng Đã Được Duyệt" để sẵn sàng đăng lại bản mới!',
+      });
+      setActiveTab('APPROVED');
+      await loadArticles('APPROVED', articleId);
+    } catch (e: any) {
+      setNotification({ type: 'error', message: e.message || 'Lỗi khi đặt lại trạng thái bài viết' });
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  // Thao tác Đồng bộ với Zalo OA thực tế (kiểm tra bài nào bị xóa trên OA thì tự động trả về Đã Duyệt)
+  const handleSyncWithOa = async () => {
+    setIsActionLoading(true);
+    try {
+      const res = await fetchApi<{ synced: number; reverted: number; revertedIds: string[] }>(
+        '/tour-content/articles/sync-oa',
+        { method: 'POST' },
+      );
+      if (res?.reverted > 0) {
+        setNotification({
+          type: 'success',
+          message: `🔄 Đã đồng bộ với Zalo OA: phát hiện ${res.reverted} bài đã bị xóa trên Zalo OA và đã tự động chuyển về tab "Bài Đăng Đã Được Duyệt" để chị đăng lại!`,
+        });
+        setActiveTab('APPROVED');
+        await loadArticles('APPROVED');
+      } else {
+        setNotification({
+          type: 'info',
+          message: `✅ Đã kiểm tra đồng bộ: Tất cả bài viết đều khớp chính xác với Zalo OA (${res?.synced || 0} bài trực tuyến).`,
+        });
+        await loadArticles(activeTab);
+      }
+    } catch (e: any) {
+      setNotification({ type: 'error', message: e.message || 'Lỗi khi đồng bộ với Zalo OA' });
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
   // 3. Thao tác YÊU CẦU SỬA -> Tự động sửa và chuyển sang "Bài đăng chưa được duyệt"
   const handleSubmitRevision = async () => {
     if (!selectedArticleId || !revisionNote.trim()) {
@@ -532,6 +579,18 @@ export function TourArticleWorkflow() {
           <Button
             size="sm"
             variant="outline"
+            onClick={handleSyncWithOa}
+            disabled={isActionLoading}
+            className="text-xs font-bold border border-blue-400 dark:border-blue-500/50 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/60 shadow-xs flex items-center gap-1.5"
+            title="Đồng bộ trực tiếp với Zalo OA: tự động phát hiện bài đã xóa trên Zalo OA và chuyển về Đã Duyệt để đăng lại"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isActionLoading ? 'animate-spin' : ''}`} />
+            <span>Đồng Bộ Zalo OA</span>
+          </Button>
+
+          <Button
+            size="sm"
+            variant="outline"
             onClick={handleRegenerateAll}
             disabled={isActionLoading}
             className="text-xs font-bold border border-indigo-300 dark:border-indigo-500/40 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:text-indigo-300 dark:hover:bg-indigo-900/60 shadow-xs"
@@ -766,6 +825,21 @@ export function TourArticleWorkflow() {
                     Yêu Cầu Sửa
                   </Button>
 
+                  {/* Nút Đăng lại bản mới cho bài đã xuất bản */}
+                  {(selectedArticle.status === 'PUBLISHED' || selectedArticle.zaloArticleUrl) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleResetPublish(selectedArticle.id)}
+                      disabled={isActionLoading}
+                      className="text-xs font-bold border border-amber-500/50 text-amber-300 hover:bg-amber-500/10 flex items-center gap-1.5"
+                      title="Chuyển bài về lại tab Đã Duyệt để đăng lại bản mới nếu bài đã bị xóa trên Zalo OA"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Đăng Lại Bản Mới</span>
+                    </Button>
+                  )}
+
                   {/* Nút Đăng lên Zalo OA nếu bài đã duyệt nhưng chưa đăng */}
                   {selectedArticle.status === 'APPROVED' && !selectedArticle.zaloArticleUrl && (
                     <Button
@@ -864,6 +938,15 @@ export function TourArticleWorkflow() {
                         </a>
                       </>
                     )}
+                    <button
+                      onClick={() => handleResetPublish(selectedArticle.id)}
+                      disabled={isActionLoading}
+                      className="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold border border-amber-500/50 flex items-center gap-1.5 transition-all shadow-md active:scale-95"
+                      title="Nếu đã xóa bài trên Zalo OA hoặc muốn đăng lại bản mới nhất, bấm nút này để chuyển bài về tab Đã Duyệt"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                      <span>{isActionLoading ? 'Đang xử lý...' : '🔄 Đăng Lại Bản Mới (Reset)'}</span>
+                    </button>
                   </div>
                 </div>
               )}

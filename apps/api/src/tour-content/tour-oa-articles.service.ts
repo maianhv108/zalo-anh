@@ -553,9 +553,22 @@ export class TourOaArticlesService {
         headers: { access_token: token },
       });
       const sliceData = (await sliceRes.json()) as any;
-      const matchedArticle =
-        sliceData.data?.medias?.find((m: any) => m.title?.trim() === article.title?.trim()) ||
-        sliceData.data?.medias?.[0];
+      let matchedArticle = sliceData.data?.medias?.find(
+        (m: any) => m.title?.trim().toLowerCase() === article.title?.trim().toLowerCase(),
+      );
+
+      // Nếu Zalo OA chưa kịp index trong 1.5s, thử chờ thêm 2s để lấy chính xác ID bài mới
+      if (!matchedArticle) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const retrySlice = (await (
+          await fetch('https://openapi.zalo.me/v2.0/article/getslice?offset=0&limit=5&type=normal', {
+            headers: { access_token: token },
+          })
+        ).json()) as any;
+        matchedArticle = retrySlice.data?.medias?.find(
+          (m: any) => m.title?.trim().toLowerCase() === article.title?.trim().toLowerCase(),
+        );
+      }
 
       const zaloArticleId = matchedArticle?.id || resData.data?.token || 'pending';
       const pageId = process.env.ZALO_OA_ID || '4585991630126061653';
@@ -580,6 +593,81 @@ export class TourOaArticlesService {
     } catch (e: any) {
       this.logger.error(`Lỗi khi đăng bài viết ${id} lên Zalo OA: ${e.message}`);
       return { success: false, message: e.message };
+    }
+  }
+
+  /**
+   * Reset bài viết đã đăng về trạng thái "Đã duyệt" để có thể chỉnh sửa hoặc đăng lại bản mới
+   */
+  async resetPublished(id: string): Promise<TourOaArticle> {
+    const article = await this.findOne(id);
+    article.status = 'APPROVED';
+    article.zaloArticleId = undefined;
+    article.zaloArticleUrl = undefined;
+    article.publishedAt = undefined;
+    article.updatedAt = new Date().toISOString();
+
+    this.articlesMap.set(id, article);
+    this.saveToDisk();
+    this.logger.log(`🔄 Đã chuyển bài viết ${id} về trạng thái "Đã duyệt" để sẵn sàng đăng lại.`);
+    return article;
+  }
+
+  /**
+   * Đồng bộ trạng thái bài viết từ Zalo OA thực tế:
+   * Nếu bài viết đã bị xóa trên Zalo OA thì tự động chuyển về "Đã duyệt" để người dùng đăng lại bản mới
+   */
+  async syncWithZaloOa(): Promise<{ synced: number; reverted: number; revertedIds: string[] }> {
+    let token = this.getValidAccessToken();
+    if (!token) {
+      return { synced: 0, reverted: 0, revertedIds: [] };
+    }
+
+    try {
+      const sliceRes = await fetch('https://openapi.zalo.me/v2.0/article/getslice?offset=0&limit=50&type=normal', {
+        headers: { access_token: token },
+      });
+      const sliceData = (await sliceRes.json()) as any;
+      const liveMedias: any[] = sliceData.data?.medias || [];
+      const liveIds = new Set(liveMedias.map((m) => m.id));
+      const liveTitles = new Set(liveMedias.map((m) => m.title?.trim().toLowerCase()));
+
+      let revertedCount = 0;
+      const revertedIds: string[] = [];
+
+      for (const [id, article] of this.articlesMap.entries()) {
+        if (article.status === 'PUBLISHED') {
+          // Kiểm tra xem ID bài hoặc Tiêu đề bài viết này có còn trên Zalo OA không
+          const existsById = article.zaloArticleId && liveIds.has(article.zaloArticleId);
+          const existsByTitle = article.title && liveTitles.has(article.title.trim().toLowerCase());
+
+          if (!existsById && !existsByTitle) {
+            // Đã bị xóa trên Zalo OA -> chuyển về APPROVED để chị đăng lại!
+            article.status = 'APPROVED';
+            article.zaloArticleId = undefined;
+            article.zaloArticleUrl = undefined;
+            article.publishedAt = undefined;
+            article.updatedAt = new Date().toISOString();
+            this.articlesMap.set(id, article);
+            revertedCount++;
+            revertedIds.push(id);
+            this.logger.log(`⚠️ Bài viết ${id} (${article.title}) không còn tồn tại trên Zalo OA. Đã trả về "Đã duyệt".`);
+          }
+        }
+      }
+
+      if (revertedCount > 0) {
+        this.saveToDisk();
+      }
+
+      return {
+        synced: liveMedias.length,
+        reverted: revertedCount,
+        revertedIds,
+      };
+    } catch (e: any) {
+      this.logger.error(`Lỗi đồng bộ Zalo OA: ${e.message}`);
+      return { synced: 0, reverted: 0, revertedIds: [] };
     }
   }
 
